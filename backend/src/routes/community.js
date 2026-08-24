@@ -315,16 +315,18 @@ router.get ("/search", requireAuth, async (req, res) => {
   const query = (req.query.q || "").trim().toLowerCase();
   if (!query) return res.json({ users: [], posts: [] });
 
-  const users = (await readCollection("users"))
-    .filter((u) => u.name.toLowerCase().includes(query))
-    .slice(0, 20)
-    .map(publicProfile);
+  const { data: usersData } = await supabase.from('users').select('*').ilike('name', `%${query}%`).limit(20);
+  const users = (usersData || []).map(publicProfile);
 
-  const collections = { likes: await readCollection("likes"), comments: await readCollection("comments"), users: await readCollection("users") };
-  const matchedPosts = (await readCollection("posts"))
-    .filter((p) => p.description.toLowerCase().includes(query))
-    .slice(0, 20);
-  const posts = await Promise.all(matchedPosts.map((p) => decoratePost(p, req.userId, collections)));
+  const { data: matchedPosts } = await supabase.from('posts').select('*').ilike('description', `%${query}%`).limit(20);
+  
+  const postIds = (matchedPosts || []).map(p => p.id);
+  const { data: likes } = await supabase.from('likes').select('*').in('postId', postIds);
+  const { data: comments } = await supabase.from('comments').select('*').in('postId', postIds);
+  const { data: authors } = await supabase.from('users').select('*').in('id', (matchedPosts || []).map(p => p.userId));
+  
+  const collections = { likes: likes || [], comments: comments || [], users: authors || [] };
+  const posts = await Promise.all((matchedPosts || []).map((p) => decoratePost(p, req.userId, collections)));
 
   res.json({ users, posts });
 });
@@ -355,16 +357,19 @@ router.post ("/challenges/:id/join", requireAuth, async (req, res) => {
 // ---- Leaderboard ----------------------------------------------------------
 
 router.get ("/leaderboard", requireAuth, async (req, res) => {
-  const users = await readCollection("users");
-  const items = await readCollection("items");
-  const allUserChallenges = (await readCollection("userChallenges")).filter((c) => c.completedAt);
-  const allBadges = await readCollection("userBadges");
+  const { data: users } = await supabase.from('users').select('id, name');
+  const { data: items } = await supabase.from('items').select('userId, userAction').not('userAction', 'is', null);
+  const { data: allUserChallenges } = await supabase.from('userChallenges').select('userId').not('completedAt', 'is', null);
+  const { data: allBadges } = await supabase.from('userBadges').select('userId');
 
-  const rows = users.map((user) => {
-    const userItems = items.filter((i) => i.userId === user.id);
-    const completedActions = userItems.filter((i) => i.userAction).length;
-    const challengesCompleted = allUserChallenges.filter((c) => c.userId === user.id).length;
-    const badgeCount = allBadges.filter((b) => b.userId === user.id).length;
+  const itemsList = items || [];
+  const challengesList = allUserChallenges || [];
+  const badgesList = allBadges || [];
+
+  const rows = (users || []).map((user) => {
+    const completedActions = itemsList.filter((i) => i.userId === user.id).length;
+    const challengesCompleted = challengesList.filter((c) => c.userId === user.id).length;
+    const badgeCount = badgesList.filter((b) => b.userId === user.id).length;
     const points = completedActions * 5 + badgeCount * badges.BADGE_POINTS + challengesCompleted * challenges.CHALLENGE_POINTS;
     return { userId: user.id, name: user.name, completedActions, challengesCompleted, badgeCount, points };
   });
@@ -391,49 +396,42 @@ router.post ("/report", requireAuth, async (req, res) => {
     reason: reason.trim().slice(0, 1000),
     status: "open",
     createdAt: new Date().toISOString(),
-    resolvedAt: null,
-    resolvedBy: null,
-    resolution: null,
   };
-  await (await getCollection("reports")).insertOne(report);
+  await supabase.from('reports').insert([report]);
   res.status(201).json({ report });
 });
 
 router.get ("/reports", requireAuth, requireAdmin, async (req, res) => {
   const status = req.query.status || "open";
-  let reports = await readCollection("reports");
-  if (status !== "all") reports = reports.filter((r) => r.status === status);
-  reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json({ reports });
+  let query = supabase.from('reports').select('*').order('createdAt', { ascending: false });
+  if (status !== "all") query = query.eq('status', status);
+  
+  const { data: reports } = await query;
+  res.json({ reports: reports || [] });
 });
 
 router.post ("/reports/:id/resolve", requireAuth, requireAdmin, async (req, res) => {
   const { action } = req.body || {};
   if (!isOneOf(action, RESOLUTION_ACTIONS)) return sendError(res, 400, "INVALID_ACTION", "Unrecognized moderation action.");
 
-  const reportsCol = await getCollection("reports");
-  const report = await reportsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: report } = await supabase.from('reports').select('*').eq('id', req.params.id).single();
   if (!report) return sendError(res, 404, "REPORT_NOT_FOUND", "That report couldn't be found.");
 
   if (action === "remove_content") {
     if (report.targetType === "post") {
-      const postsCol = await getCollection("posts");
-      const post = await postsCol.findOne({ id: report.targetId });
+      const { data: post } = await supabase.from('posts').select('*').eq('id', report.targetId).single();
       if (post) {
-        deleteUploadedFile(post.beforeImageUrl);
-        deleteUploadedFile(post.afterImageUrl);
-        await postsCol.deleteOne({ id: report.targetId });
-        await (await getCollection("comments")).deleteMany({ postId: report.targetId });
-        await (await getCollection("likes")).deleteMany({ postId: report.targetId });
+        for (const img of (post.images || [])) deleteUploadedFile(img.url);
+        await supabase.from('posts').delete().eq('id', report.targetId);
       }
     } else if (report.targetType === "comment") {
-      await (await getCollection("comments")).deleteOne({ id: report.targetId });
+      await supabase.from('comments').delete().eq('id', report.targetId);
     }
   } else if (action === "suspend_user" || action === "ban_user") {
     const userIdToModerate = report.targetType === "user" ? report.targetId : null;
     if (userIdToModerate) {
       const setField = action === "suspend_user" ? { suspended: true } : { banned: true };
-      await (await getCollection("users")).updateOne({ id: userIdToModerate }, { $set: setField });
+      await supabase.from('users').update(setField).eq('id', userIdToModerate);
     }
   }
 
@@ -443,7 +441,7 @@ router.post ("/reports/:id/resolve", requireAuth, requireAdmin, async (req, res)
     resolvedBy: req.userId,
     resolution: action,
   };
-  await reportsCol.updateOne({ id: req.params.id }, { $set: resolvedFields });
+  await supabase.from('reports').update(resolvedFields).eq('id', req.params.id);
 
   res.json({ report: { ...report, ...resolvedFields } });
 });
