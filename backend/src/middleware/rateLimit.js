@@ -22,19 +22,26 @@ function rateLimit({ windowMs, max, message }) {
     const windowSeconds = Math.ceil(windowMs / 1000);
 
     if (redis) {
+      const withTimeout = (promise, ms) => {
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("UPSTASH_TIMEOUT")), ms);
+        });
+        return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+      };
+
       try {
         console.log("[RATE-LIMIT] Calling Upstash Redis...");
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("UPSTASH_TIMEOUT")), 1000));
         
-        const count = await Promise.race([redis.incr(key), timeoutPromise]);
+        const count = await withTimeout(redis.incr(key), 1000);
         console.log("[RATE-LIMIT] Upstash Redis call completed successfully.");
         
         if (count === 1) {
-          await Promise.race([redis.expire(key, windowSeconds), timeoutPromise]);
+          await withTimeout(redis.expire(key, windowSeconds), 1000);
         }
         
         if (count > max) {
-          const ttl = await Promise.race([redis.ttl(key), timeoutPromise]);
+          const ttl = await withTimeout(redis.ttl(key), 1000);
           res.set("Retry-After", ttl > 0 ? ttl.toString() : windowSeconds.toString());
           return res.status(429).json({
             success: false,

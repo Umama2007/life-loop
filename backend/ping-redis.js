@@ -15,10 +15,12 @@ async function run() {
   });
 
   try {
-    console.log("Pinging Redis...");
-    const start = Date.now();
-    const result = await redis.ping();
-    console.log(`Success! Ping returned: ${result} in ${Date.now() - start}ms`);
+    console.log("Pinging Redis 5 times...");
+    for (let i = 0; i < 5; i++) {
+      const start = Date.now();
+      const result = await redis.ping();
+      console.log(`Ping ${i + 1} returned: ${result} in ${Date.now() - start}ms`);
+    }
   } catch (err) {
     console.error("Redis ping failed:", err);
   }
