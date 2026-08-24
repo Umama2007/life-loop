@@ -13,7 +13,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: none; box-
 .login-logo-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(155deg, #489C71, #2C7A51); font-size: 12px; letter-spacing: .06em; box-shadow: 0 8px 20px rgba(44,122,81,.3); }
 .intro-content { position: relative; z-index: 1; max-width: 600px; }
 .eyebrow, .kicker { color: #489C71; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
-.login-intro .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.95); padding: 8px 16px; border-radius: 999px; color: #489C71; font-weight: 800; letter-spacing: 1px; font-size: 13px; }
+.login-intro .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #9bd7b2; font-weight: 800; letter-spacing: 1px; font-size: 13px; }
 .login-intro .eyebrow span { width: 6px; height: 6px; background: #489C71; border-radius: 50%; }
 .intro-content h1 { margin: 18px 0; max-width: 600px; font-family: Manrope, sans-serif; font-size: clamp(48px, 6.5vw, 82px); line-height: 1.05; letter-spacing: -0.03em; }
 .intro-content p { max-width: 500px; margin: 0; color: #c8d8d0; font-size: 18px; line-height: 1.6; }
