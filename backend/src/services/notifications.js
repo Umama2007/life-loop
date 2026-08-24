@@ -17,7 +17,8 @@ async function createNotification(userId, type, title, message, link = null) {
     read: false,
     createdAt: new Date().toISOString(),
   };
-  await supabase.from('notifications').insert([newNotification]);
+  const { error } = await supabase.from('notifications').insert([newNotification]);
+  if (error) console.error("Failed to create notification:", error);
 }
 
 async function getNotifications(userId, { page = 1, pageSize = 20 } = {}) {
