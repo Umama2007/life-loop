@@ -1,0 +1,251 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "LifeLoop API",
+    "version": "1.0.0",
+    "description": "The backend API powering LifeLoop — scanning, AI recommendations, community, gamification, and notifications. All endpoints except registration/login require a valid session cookie (obtained by logging in)."
+  },
+  "servers": [{ "url": "/api", "description": "Local server" }],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "lifeloop_token" }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": { "type": "string", "example": "INVALID_NAME" },
+          "message": { "type": "string", "example": "Please tell us what the item is." }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "isAdmin": { "type": "boolean" }
+        }
+      },
+      "Recommendation": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["keep", "repair", "reuse", "resell", "donate", "recycle"] },
+          "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+          "explanation": { "type": "string" }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "category": { "type": "string", "enum": ["clothing", "electronics", "tech", "furniture", "home", "other"] },
+          "condition": { "type": "string", "enum": ["excellent", "good", "fair", "worn", "poor", "broken"] },
+          "ageYears": { "type": "number", "nullable": true },
+          "images": { "type": "array", "items": { "type": "object", "properties": { "url": { "type": "string" } } } },
+          "identification": { "type": "object" },
+          "recommendations": { "type": "array", "items": { "$ref": "#/components/schemas/Recommendation" } },
+          "primaryAction": { "type": "string" },
+          "lifePotential": { "type": "integer" },
+          "note": { "type": "string" },
+          "source": { "type": "string", "enum": ["builtin"] },
+          "userAction": { "type": "string", "nullable": true },
+          "saved": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string" },
+          "status": { "type": "string", "enum": ["queued", "processing", "done", "failed"] },
+          "result": { "nullable": true },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  },
+  "security": [{ "cookieAuth": [] }],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Create an account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name", "email", "password"], "properties": {
+            "name": { "type": "string" }, "email": { "type": "string" }, "password": { "type": "string", "minLength": 6 }, "rememberMe": { "type": "boolean" }
+          } } } }
+        },
+        "responses": {
+          "201": { "description": "Account created", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "409": { "description": "Email already registered", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Sign in",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["email", "password"], "properties": {
+            "email": { "type": "string" }, "password": { "type": "string" }, "rememberMe": { "type": "boolean" }
+          } } } }
+        },
+        "responses": {
+          "200": { "description": "Signed in", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } },
+          "401": { "description": "Incorrect credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": { "summary": "Sign out", "responses": { "200": { "description": "Signed out" } } }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get the currently signed-in user",
+        "responses": {
+          "200": { "description": "Current user", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } },
+          "401": { "description": "Not signed in", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/items/scan": {
+      "post": {
+        "summary": "Scan a new item and get ranked recommendations",
+        "description": "Multipart form. Fields: name (required), category, condition, ageYears, brand, model, material, runOcr ('true' to extract text from the first photo via OCR), photos (up to 6 image files).",
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object" } } } },
+        "responses": {
+          "201": { "description": "Item created", "content": { "application/json": { "schema": { "type": "object", "properties": { "item": { "$ref": "#/components/schemas/Item" } } } } } },
+          "400": { "description": "Validation error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/items/scan-code": {
+      "post": {
+        "summary": "Decode a QR code from a photo",
+        "description": "Multipart form field: codeImage (single image). Returns the decoded text and, if BARCODE_LOOKUP_API_URL is configured, a product lookup result. 1D barcodes (UPC/EAN) are not supported.",
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object" } } } },
+        "responses": {
+          "200": { "description": "Code decoded", "content": { "application/json": { "schema": { "type": "object", "properties": { "code": { "type": "string" }, "product": { "nullable": true } } } } } },
+          "404": { "description": "No code found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/items": {
+      "get": {
+        "summary": "List/search/filter/paginate your scanned items",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "condition", "in": "query", "schema": { "type": "string" } },
+          { "name": "action", "in": "query", "schema": { "type": "string" } },
+          { "name": "saved", "in": "query", "schema": { "type": "string", "enum": ["true", "false"] } },
+          { "name": "completed", "in": "query", "schema": { "type": "string", "enum": ["true", "false"] } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["newest", "oldest", "score_desc", "score_asc"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Paginated item list" } }
+      }
+    },
+    "/items/stats": {
+      "get": { "summary": "Real, non-hardcoded dashboard statistics for your items", "responses": { "200": { "description": "Stats" } } }
+    },
+    "/items/{id}": {
+      "get": { "summary": "Get a single item", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Item" }, "404": { "description": "Not found" } } },
+      "patch": { "summary": "Correct fields, record an actual action taken, save/unsave, or add notes", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Updated item" } } },
+      "delete": { "summary": "Delete an item and its photos", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/items/{id}/assistant/{type}": {
+      "get": {
+        "summary": "Generate (or fetch cached) repair/reuse/resell/donate/recycle guide",
+        "description": "Returns a cached guide immediately, or enqueues a background job (poll /jobs/{jobId}) if not yet generated.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "type", "in": "path", "required": true, "schema": { "type": "string", "enum": ["repair", "reuse", "resell", "donate", "recycle"] } },
+          { "name": "regenerate", "in": "query", "schema": { "type": "string", "enum": ["true", "false"] } }
+        ],
+        "responses": {
+          "200": { "description": "Cached guide returned immediately" },
+          "202": { "description": "Guide generation queued", "content": { "application/json": { "schema": { "type": "object", "properties": { "jobId": { "type": "string" }, "status": { "type": "string" } } } } } }
+        }
+      }
+    },
+    "/jobs/{id}": {
+      "get": {
+        "summary": "Poll a background job's status/result",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Job status", "content": { "application/json": { "schema": { "type": "object", "properties": { "job": { "$ref": "#/components/schemas/Job" } } } } } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/community/posts": {
+      "get": { "summary": "List/search the community feed", "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string" } }, { "name": "userId", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "Posts" } } },
+      "post": { "summary": "Create a post (multipart: description, beforeImage, afterImage)", "responses": { "201": { "description": "Post created" } } }
+    },
+    "/community/posts/{id}": {
+      "get": { "summary": "Get a post with its comments", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Post + comments" } } },
+      "patch": { "summary": "Edit your own post", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Updated" } } },
+      "delete": { "summary": "Delete your own post (or any post, if admin)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/community/posts/{id}/like": {
+      "post": { "summary": "Like a post", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Liked" } } },
+      "delete": { "summary": "Unlike a post", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Unliked" } } }
+    },
+    "/community/posts/{id}/comments": {
+      "post": { "summary": "Comment on a post", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "201": { "description": "Comment created" } } }
+    },
+    "/community/comments/{id}": {
+      "delete": { "summary": "Delete your own comment (or any, if admin)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/community/users/{id}/follow": {
+      "post": { "summary": "Follow a user", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Followed" } } },
+      "delete": { "summary": "Unfollow a user", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Unfollowed" } } }
+    },
+    "/community/users/{id}": {
+      "get": { "summary": "Get a user's public profile (use 'me' for your own)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Profile" } } }
+    },
+    "/community/profile": {
+      "patch": { "summary": "Edit your own bio", "responses": { "200": { "description": "Updated profile" } } }
+    },
+    "/community/search": {
+      "get": { "summary": "Search posts and people", "parameters": [{ "name": "q", "in": "query", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Search results" } } }
+    },
+    "/community/badges": {
+      "get": { "summary": "List all badge definitions with your unlock status", "responses": { "200": { "description": "Badges" } } }
+    },
+    "/community/challenges": {
+      "get": { "summary": "List challenges with your join/progress status", "responses": { "200": { "description": "Challenges" } } }
+    },
+    "/community/challenges/{id}/join": {
+      "post": { "summary": "Join a challenge", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Joined" } } }
+    },
+    "/community/leaderboard": {
+      "get": { "summary": "Top users ranked by real completed actions, badges, and challenges", "responses": { "200": { "description": "Leaderboard" } } }
+    },
+    "/community/report": {
+      "post": { "summary": "Report a post, comment, or user", "responses": { "201": { "description": "Report filed" } } }
+    },
+    "/community/reports": {
+      "get": { "summary": "List open reports (admin only)", "responses": { "200": { "description": "Reports" }, "403": { "description": "Admin required" } } }
+    },
+    "/community/reports/{id}/resolve": {
+      "post": { "summary": "Resolve a report: dismiss, remove_content, suspend_user, or ban_user (admin only)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Resolved" }, "403": { "description": "Admin required" } } }
+    },
+    "/notifications": {
+      "get": { "summary": "List your notifications with unread count", "responses": { "200": { "description": "Notifications" } } }
+    },
+    "/notifications/{id}/read": {
+      "post": { "summary": "Mark one notification as read", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Marked read" } } }
+    },
+    "/notifications/read-all": {
+      "post": { "summary": "Mark all notifications as read", "responses": { "200": { "description": "Marked all read" } } }
+    }
+  }
+}

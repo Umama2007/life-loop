@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Team — LifeLoop</title>
+  <meta name="description" content="Meet the team behind LifeLoop.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/team.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <button class="mobile-menu-btn" id="mobileMenuButton" type="button" aria-label="Open navigation" aria-expanded="false">Menu</button>
+        <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true">LL</span>LifeLoop</a>
+        <div class="navlinks" id="mainNavLinks">
+          <a href="index.html#how">How it works</a><a href="index.html#discover">Discover</a><a href="index.html">Home</a><a href="assistant.html">Ask LifeLoop</a><a href="history.html">History</a><a href="community.html">Community</a><a href="team.html" class="active" aria-current="page">Our Team</a><a href="profile.html">Profile</a>
+        </div>
+        <div class="nav-actions">
+          <button class="theme-btn" id="themeToggle" type="button" aria-label="Toggle color theme">Theme</button>
+          <div class="notification-menu">
+            <button class="notif-btn" id="notifButton" type="button" aria-label="Notifications" aria-expanded="false">
+              <span class="notif-bell-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></span><span class="notif-badge" id="notifBadge" hidden>0</span>
+            </button>
+            <div class="notif-panel" id="notifPanel" hidden>
+              <div class="notif-panel-head"><strong>Notifications</strong><button id="markAllReadButton" type="button">Mark all read</button></div>
+              <div id="notifList"><p class="notif-empty">No notifications yet.</p></div>
+            </div>
+          </div>
+          <div class="account-menu">
+            <button class="account-btn" id="accountButton" type="button" aria-expanded="false">
+              <span class="avatar" id="userAvatar">U</span>
+              <span id="navUserName">Account</span>
+            </button>
+            <div class="account-panel" id="accountPanel" hidden>
+              <p class="account-label">Signed in as</p>
+              <strong id="accountName">User</strong>
+              <span id="accountEmail">demo account</span>
+              <button class="logout-btn" id="logoutButton" type="button">Log out</button>
+            </div>
+          </div>
+          <button class="navbtn" type="button" id="headerLogoutButton" style="background: transparent; color: var(--green); border: 1px solid var(--green); margin-right: 8px;">Log out</button>
+          <button class="navbtn" type="button" onclick="window.location.href='index.html'">Scan an item</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="team-hero container">
+      <div class="eyebrow"><span></span> THE PEOPLE BEHIND LIFELOOP</div>
+      <h1 style="font-family: 'Manrope', sans-serif; font-size: 48px; color: var(--ink); margin: 16px 0 24px; line-height: 1.1;">Meet the team behind LifeLoop.</h1>
+      <p style="font-size: 18px; color: var(--muted); max-width: 600px; line-height: 1.5;">Three people, different roles, one goal — making sustainability practical, personal, and easier to act on.</p>
+    </section>
+
+    <section class="container" id="team">
+      <h2 style="font-family: 'Manrope', sans-serif; font-size: 28px; color: var(--ink); border-bottom: 2px solid var(--green); display: inline-block; padding-bottom: 8px; margin-bottom: 8px;">Meet our team</h2>
+      
+      <div class="team-grid">
+        <!-- Card 1: Umama -->
+        <div class="team-card">
+          <div class="team-img-wrapper">
+            <img src="assets/images/umama.jpg?v=1" alt="Umama Profile Picture">
+          </div>
+          <h3>Umama</h3>
+          <div class="role">Group Lead & Backend Developer</div>
+          <ul class="responsibilities">
+            <li>Backend architecture</li>
+            <li>APIs and integrations</li>
+            <li>Database and application logic</li>
+            <li>Security</li>
+            <li>Deployment</li>
+            <li>Overall technical coordination</li>
+          </ul>
+          <div class="team-quote">
+            <span>“Building the logic behind the ideas and making them come to life.”</span>
+          </div>
+          <div class="team-socials">
+            <a href="mailto:umamasajid25@gmail.com" class="social-link" title="Email">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              Email
+            </a>
+            <a href="https://www.linkedin.com/in/umama-ume-amen-6916ab374?utm_source=share_via&utm_content=profile&utm_medium=member_android" class="social-link" title="LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://www.instagram.com/byteum.dev_?igsh=dTZ6ZnhvbWl0dnZs" class="social-link" title="Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              Instagram
+            </a>
+          </div>
+        </div>
+
+        <!-- Card 2: Alison -->
+        <div class="team-card">
+          <div class="team-img-wrapper">
+            <img src="assets/images/alison.jpg?v=1" alt="Alison Profile Picture">
+          </div>
+          <h3>Alison</h3>
+          <div class="role">Frontend Developer</div>
+          <ul class="responsibilities">
+            <li>Frontend development</li>
+            <li>UI implementation</li>
+            <li>Responsive design</li>
+            <li>User experience</li>
+            <li>Connecting the interface with the backend</li>
+          </ul>
+          <div class="team-quote">
+            <span>“I turn ideas into experiences people can actually use.”</span>
+          </div>
+          <div class="team-socials">
+            <a href="mailto:alison.ui@example.com" class="social-link" title="Email">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              Email
+            </a>
+            <a href="https://linkedin.com/in/alison-frontend" class="social-link" title="LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://instagram.com/alison_designs" class="social-link" title="Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              Instagram
+            </a>
+          </div>
+        </div>
+
+        <!-- Card 3: Neha -->
+        <div class="team-card">
+          <div class="team-img-wrapper">
+            <img src="assets/images/neha.jpg?v=1" alt="Neha Profile Picture">
+          </div>
+          <h3>Neha</h3>
+          <div class="role">Product Manager & Marketing Lead</div>
+          <ul class="responsibilities">
+            <li>Product direction</li>
+            <li>Feature planning</li>
+            <li>Marketing</li>
+            <li>Social media</li>
+            <li>Community presence</li>
+            <li>Product communication</li>
+          </ul>
+          <div class="team-quote">
+            <span>“Turning bold ideas into meaningful solutions”</span>
+          </div>
+          <div class="team-socials">
+            <a href="mailto:nehax0483@gmail.com" class="social-link" title="Email">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              Email
+            </a>
+            <a href="https://www.linkedin.com/in/neha-827518384?utm_source=share_via&utm_content=profile&utm_medium=member_android" class="social-link" title="LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://instagram.com/sunlit.neha" class="social-link" title="Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              Instagram
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="mission-section">
+        <div class="mission-icon">
+          <!-- Leaf icon related to sustainability -->
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        </div>
+        <div class="mission-content">
+          <h2>Building LifeLoop with purpose.</h2>
+          <p>Every feature, every decision, and every line of code is built around one idea: helping people make better use of the things they already own.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container connect-section">
+      <h2 style="font-family: 'Manrope', sans-serif; font-size: 24px; color: var(--ink); margin-bottom: 8px;">Want to connect?</h2>
+      <p style="font-size: 15px; color: var(--muted);">Follow our journey, explore what we're building, or get in touch with the team.</p>
+      
+      <div class="connect-grid">
+        <a href="mailto:byteum.dev@gmail.com" class="connect-card">
+          <div class="connect-icon email">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="connect-text">
+            <strong>Email Us</strong>
+            <span>Drop us a message</span>
+          </div>
+          <div class="connect-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <a href="https://youtube.com/@lifeloop.offical?si=SY0-G1qoHjTpWWmw" class="connect-card">
+          <div class="connect-icon youtube">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+          </div>
+          <div class="connect-text">
+            <strong>YouTube</strong>
+            <span>Watch our latest updates</span>
+          </div>
+          <div class="connect-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <a href="https://www.instagram.com/p/DcViDPSEmKW/?igsh=MW9hc2N0bzNjcjN2dw==" class="connect-card">
+          <div class="connect-icon instagram">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+          </div>
+          <div class="connect-text">
+            <strong>Instagram</strong>
+            <span>Follow our journey</span>
+          </div>
+          <div class="connect-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="container"><span>© 2026 LifeLoop</span><span>Buy less. Use longer. Waste smarter.</span></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

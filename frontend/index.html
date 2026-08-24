@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeLoop — Give Everything a Longer Life</title>
+  <meta name="description"
+    content="LifeLoop helps you repair, reuse, resell, donate or recycle the things you already own.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <button class="mobile-menu-btn" id="mobileMenuButton" type="button" aria-label="Open navigation" aria-expanded="false">Menu</button>
+        <a class="logo" href="#"><span class="logo-mark" aria-hidden="true">LL</span>LifeLoop</a>
+        <div class="navlinks" id="mainNavLinks">
+          <a href="#how">How it works</a><a href="#discover">Discover</a><a href="#impact">Impact</a><a href="assistant.html">Ask LifeLoop</a><a href="history.html">History</a><a href="community.html">Community</a><a href="team.html">Our Team</a><a href="profile.html">Profile</a>
+        </div>
+        <div class="nav-actions">
+          <button class="theme-btn" id="themeToggle" type="button" aria-label="Toggle color theme">Theme</button>
+          <div class="notification-menu">
+            <button class="notif-btn" id="notifButton" type="button" aria-label="Notifications" aria-expanded="false">
+              <span class="notif-bell-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></span><span class="notif-badge" id="notifBadge" hidden>0</span>
+            </button>
+            <div class="notif-panel" id="notifPanel" hidden>
+              <div class="notif-panel-head"><strong>Notifications</strong><button id="markAllReadButton" type="button">Mark all read</button></div>
+              <div id="notifList"><p class="notif-empty">No notifications yet.</p></div>
+            </div>
+          </div>
+          <div class="account-menu">
+            <button class="account-btn" id="accountButton" type="button" aria-expanded="false">
+              <span class="avatar" id="userAvatar">U</span>
+              <span id="navUserName">Account</span>
+            </button>
+            <div class="account-panel" id="accountPanel" hidden>
+              <p class="account-label">Signed in as</p>
+              <strong id="accountName">User</strong>
+              <span id="accountEmail">demo account</span>
+              <button class="logout-btn" id="logoutButton" type="button">Log out</button>
+            </div>
+          </div>
+          <button class="navbtn" type="button" id="headerLogoutButton" style="background: transparent; color: var(--green); border: 1px solid var(--green); margin-right: 8px;">Log out</button>
+          <button class="navbtn" type="button" onclick="window.location.href='index.html'">Scan an item</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div>
+        <div class="eyebrow"><span></span> Personal sustainability, made practical</div>
+        <h1><span id="welcomeHeading">Give everything you own a</span> <em>longer life.</em></h1>
+        <p>Scan an item and LifeLoop helps you decide whether to keep it, repair it, reuse it, resell it, donate it, or
+          recycle it — before you replace it.</p>
+        <div class="ctas"><button class="primary" onclick="openScanner()">Scan something I own</button><a
+            class="secondary" href="#how">See how it works</a></div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-img"></div>
+        <div class="scan-card">
+          <div class="scan-top"><span class="scan-title">LifeLoop scan</span><span class="badge">82% life
+              potential</span></div>
+          <div class="scan-item">
+            <div class="mini-img"></div>
+            <div><strong>Everyday sneakers</strong><small>Still usable • 2 years old</small></div>
+          </div>
+          <div class="progress"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container stats">
+      <div class="stat"><strong id="statTotalItems">0</strong><span>items in your personal loop</span></div>
+      <div class="stat"><strong id="statSecondLife">0</strong><span>items given a second life</span></div>
+      <div class="stat"><strong id="statValueSaved">₹0</strong><span>estimated value saved so far</span></div>
+    </section>
+
+    <section class="section container" id="how">
+      <div class="section-head">
+        <div class="kicker">Simple by design</div>
+        <h2>One scan. Better next steps.</h2>
+        <p>No guilt. No complicated sustainability scorecards. Just a clear recommendation for the thing in front of
+          you.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="num">01</div>
+          <div class="step-icon" aria-hidden="true">01</div>
+          <h3>Scan</h3>
+          <p>Take a photo of something you own, or describe it in a few words.</p>
+        </div>
+        <div class="step">
+          <div class="num">02</div>
+          <div class="step-icon" aria-hidden="true">02</div>
+          <h3>Understand</h3>
+          <p>LifeLoop identifies the item and estimates its current condition and life potential.</p>
+        </div>
+        <div class="step">
+          <div class="num">03</div>
+          <div class="step-icon" aria-hidden="true">03</div>
+          <h3>Choose</h3>
+          <p>Get practical options: keep, repair, reuse, resell, donate or recycle.</p>
+        </div>
+        <div class="step">
+          <div class="num">04</div>
+          <div class="step-icon" aria-hidden="true">04</div>
+          <h3>Loop it</h3>
+          <p>Track the action and see the money and estimated impact you created.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container">
+      <div class="feature">
+        <div class="feature-img"></div>
+        <div>
+          <div class="kicker">Your next best life</div>
+          <h2>Don't replace it until you know its options.</h2>
+          <p>LifeLoop turns “What should I do with this?” into a simple decision.</p>
+          <div class="option-list">
+            <div class="option">Repair <b>Recommended</b></div>
+            <div class="option">Keep using <b>Great option</b></div>
+            <div class="option">Donate <b>Give it forward</b></div>
+            <div class="option">Resell <b>Recover value</b></div>
+            <div class="option">Recycle <b>Last resort</b></div>
+          </div>
+          <button class="primary" type="button" onclick="openScanner()">Try a sample scan</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container" id="discover">
+      <div class="section-head">
+        <div class="kicker">Everything has a next step</div>
+        <h2>From your wardrobe to your workspace.</h2>
+        <p>LifeLoop is designed for the objects you already use every day.</p>
+      </div>
+      <div class="categories">
+        <div class="cat"><strong>Clothing</strong><span>Wear • Repair • Donate</span></div>
+        <div class="cat"><strong>Electronics</strong><span>Maintain • Repair • Reuse</span></div>
+        <div class="cat"><strong>Tech</strong><span>Keep • Resell • Recycle</span></div>
+        <div class="cat"><strong>Furniture</strong><span>Repair • Rehome</span></div>
+        <div class="cat"><strong>Home</strong><span>Maintain • Reuse</span></div>
+      </div>
+    </section>
+
+    <section class="section container" id="impact">
+      <div class="impact">
+        <div>
+          <div class="kicker" class="kicker kicker-light">Your loop, your impact</div>
+          <h2>Make sustainability visible.</h2>
+          <p>Every repair, reuse, resale or donation becomes part of your personal loop. Environmental figures are
+            estimates based on the product and action selected.</p>
+        </div>
+        <div class="impact-grid">
+          <div class="impact-box"><strong id="impactKept">0</strong><span>items kept in use</span></div>
+          <div class="impact-box"><strong id="impactMaterial">0 kg</strong><span>estimated material kept in circulation</span></div>
+          <div class="impact-box"><strong id="impactValue">₹0</strong><span>estimated value saved</span></div>
+          <div class="impact-box"><strong id="impactDecisions">0</strong><span>better decisions logged</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container" id="recent-scans">
+      <div class="section-head">
+        <div class="kicker">Your loop</div>
+        <h2>Recent scans</h2>
+        <p>Everything you've scanned, and what LifeLoop recommends for it.</p>
+      </div>
+      <div class="item-list" id="itemList">
+        <p class="item-list-empty" id="itemListEmpty">No items scanned yet — try the scanner above.</p>
+      </div>
+    </section>
+
+    <section class="cta container">
+      <div class="kicker">Start your loop</div>
+      <h2>What’s the next life of something you already own?</h2>
+      <p>Scan one item. Get one better option. Start small, then keep the loop going.</p>
+      <button class="primary" onclick="openScanner()">Scan my first item</button>
+    </section>
+  </main>
+
+  <footer class="container"><span>© 2026 LifeLoop</span><span>Buy less. Use longer. Waste smarter.</span></footer>
+
+  <div class="modal" id="scanner">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <div class="kicker">LifeLoop scanner</div>
+          <h2>Give an item its next life</h2>
+        </div><button class="close" onclick="closeScanner()">×</button>
+      </div>
+
+      <form id="scanForm" class="scan-form">
+        <div class="field">
+          <label for="itemName">What is it?</label>
+          <input id="itemName" name="name" type="text" placeholder="e.g. Running shoes" required>
+        </div>
+        <div class="scan-form-row">
+          <div class="field">
+            <label for="itemCategory">Category</label>
+            <select id="itemCategory" name="category">
+              <option value="clothing">Clothing</option>
+              <option value="electronics">Electronics</option>
+              <option value="tech">Tech</option>
+              <option value="furniture">Furniture</option>
+              <option value="home">Home</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="itemAge">Age (years)</label>
+            <input id="itemAge" name="ageYears" type="number" min="0" step="0.5" value="1">
+          </div>
+        </div>
+        <div class="field">
+          <label for="itemCondition">Condition</label>
+          <select id="itemCondition" name="condition">
+            <option value="excellent">Excellent — like new</option>
+            <option value="good" selected>Good — light wear</option>
+            <option value="fair">Fair — noticeable wear</option>
+            <option value="worn">Worn — needs attention</option>
+            <option value="poor">Poor — heavily worn</option>
+            <option value="broken">Broken / not working</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="itemPhotos">Photos (optional — add up to 6: front, back, side, damage, label...)</label>
+          <input id="itemPhotos" name="photos" type="file" accept="image/*" multiple>
+          <div class="photo-preview-list" id="photoPreviewList"></div>
+        </div>
+
+
+
+        <label class="ocr-checkbox-label">
+          <input type="checkbox" id="runOcr" name="runOcr" value="true">
+          Extract text from the first photo (OCR) — reads labels/tags; first use may take longer while language data downloads
+        </label>
+
+        <div class="qr-scan-box">
+          <label for="qrCodeImage">Have a QR code on the item? Scan it to auto-fill the name.</label>
+          <div class="qr-scan-row">
+            <input id="qrCodeImage" type="file" accept="image/*">
+            <button class="secondary" id="decodeQrButton" type="button">Decode</button>
+          </div>
+          <p class="qr-scan-message" id="qrScanMessage"></p>
+        </div>
+
+        <details class="scan-more-details">
+          <summary>Add brand, model, or material (optional)</summary>
+          <div class="scan-form-row">
+            <div class="field">
+              <label for="itemBrand">Brand</label>
+              <input id="itemBrand" name="brand" type="text" placeholder="If known">
+            </div>
+            <div class="field">
+              <label for="itemModel">Model</label>
+              <input id="itemModel" name="model" type="text" placeholder="If known">
+            </div>
+          </div>
+          <div class="field">
+            <label for="itemMaterial">Material</label>
+            <input id="itemMaterial" name="material" type="text" placeholder="e.g. cotton, aluminum, oak">
+          </div>
+        </details>
+
+        <div class="form-message" id="scanFormMessage" role="alert" aria-live="polite"></div>
+        <button class="login-button" id="scanSubmitButton" type="submit">Scan this item</button>
+      </form>
+
+      <div class="result" id="result">
+        <div class="result-header">
+          <strong id="resultName"></strong>
+          <span class="result-life-potential">Life potential: <b id="resultScore"></b>/100</span>
+        </div>
+
+        <div class="identification-box" id="identificationBox" hidden>
+          <p class="identification-summary" data-id-summary></p>
+          <p class="identification-uncertainty" data-id-uncertainty></p>
+          <button class="text-button-inline" id="correctIdentificationButton" type="button" hidden>That's not correct — fix it</button>
+          <form class="correction-form" id="correctionForm" hidden>
+            <div class="scan-form-row">
+              <div class="field">
+                <label for="correctName">Item name</label>
+                <input id="correctName" type="text">
+              </div>
+              <div class="field">
+                <label for="correctCategory">Category</label>
+                <select id="correctCategory">
+                  <option value="clothing">Clothing</option>
+                  <option value="electronics">Electronics</option>
+                  <option value="tech">Tech</option>
+                  <option value="furniture">Furniture</option>
+                  <option value="home">Home</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="correctCondition">Condition</label>
+              <select id="correctCondition">
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="worn">Worn</option>
+                <option value="poor">Poor</option>
+                <option value="broken">Broken</option>
+              </select>
+            </div>
+            <button class="login-button" id="submitCorrectionButton" type="button">Save correction & re-analyze</button>
+          </form>
+        </div>
+
+        <div class="recommendation-primary" id="recommendationPrimary"></div>
+
+        <details class="alternatives-details">
+          <summary>See all options, ranked</summary>
+          <div id="recommendationAlternatives"></div>
+        </details>
+
+        <div class="chat-section">
+          <div class="guide-section-label">Ask LifeLoop</div>
+          <div class="chat-buttons" id="chatButtons" data-item-id="">
+            <button type="button" data-question="whatCanIDo">What can I do with it?</button>
+            <button type="button" data-question="canIRecycle">Can I recycle it?</button>
+            <button type="button" data-question="howToRecycle">How do I recycle it?</button>
+            <button type="button" data-question="canIRepair">Can I repair it?</button>
+            <button type="button" data-question="canIDonate">Can I donate it?</button>
+            <button type="button" data-question="canIReuse">Can I reuse it?</button>
+          </div>
+          <div class="chat-log" id="chatLog"></div>
+        </div>
+
+        <div class="result-actions">
+          <button class="secondary" id="saveItemButton" type="button">Save this item</button>
+          <select id="actualActionSelect" aria-label="Record the action you actually took">
+            <option value="">I actually did...</option>
+            <option value="keep">Kept using it</option>
+            <option value="repair">Repaired it</option>
+            <option value="reuse">Reused it</option>
+            <option value="resell">Resold it</option>
+            <option value="donate">Donated it</option>
+            <option value="recycle">Recycled it</option>
+          </select>
+        </div>
+
+        <p class="result-note" id="resultNote"></p>
+        <button class="secondary" id="scanAgainButton" type="button">Scan another item</button>
+      </div>
+
+      <div class="guide-panel" id="guidePanel" hidden>
+        <button class="close" id="closeGuideButton" type="button">×</button>
+        <div id="guideContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/itemView.js"></script>
+  <script src="js/script.js"></script>
+</body>
+
+</html>

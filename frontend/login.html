@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in | LifeLoop</title>
+  <meta name="description" content="Sign in to your LifeLoop account.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-intro" aria-labelledby="intro-title">
+      <a class="login-logo" href="login.html"><span class="login-logo-mark" aria-hidden="true">LL</span>LifeLoop</a>
+      <div class="intro-content">
+        <p class="eyebrow">Personal sustainability, made practical</p>
+        <h1 id="intro-title">Give the things you own a longer life.</h1>
+        <p>Sign in to keep track of your items, decisions, and progress in one place.</p>
+      </div>
+      <p class="login-note">Your account is stored locally on this computer's LifeLoop server. Nothing is sent anywhere else.</p>
+    </section>
+
+    <section class="login-card" aria-labelledby="login-title">
+      <div class="login-heading">
+        <p class="kicker">Welcome back</p>
+        <h2 id="login-title">Sign in to LifeLoop</h2>
+        <p id="modeSubtext">Sign in with the email and password you registered with.</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field" id="nameField" hidden>
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" autocomplete="name" placeholder="Your name">
+          <small class="field-error" id="nameError"></small>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+          <small class="field-error" id="emailError"></small>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password-wrap">
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button id="togglePassword" type="button" aria-label="Show password">Show</button>
+          </div>
+          <small class="field-error" id="passwordError"></small>
+        </div>
+
+        <div class="form-row">
+          <label class="remember"><input id="rememberMe" type="checkbox"> <span>Remember me</span></label>
+        </div>
+
+        <div class="form-message" id="formMessage" role="alert" aria-live="polite"></div>
+        <button class="login-button" id="loginButton" type="submit">Sign in</button>
+      </form>
+
+      <button class="text-button" id="modeToggle" type="button">New to LifeLoop? Create an account</button>
+      <a class="back-link" href="index.html">Back to LifeLoop</a>
+    </section>
+  </main>
+  <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community | LifeLoop</title>
+  <meta name="description" content="Share before/after transformations and see what the LifeLoop community is up to.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/history.css">
+  <link rel="stylesheet" href="css/community.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <button class="mobile-menu-btn" id="mobileMenuButton" type="button" aria-label="Open navigation" aria-expanded="false">Menu</button>
+        <a class="logo" href="index.html"><span class="logo-mark" aria-hidden="true">LL</span>LifeLoop</a>
+        <div class="navlinks" id="mainNavLinks">
+          <a href="index.html#how">How it works</a><a href="index.html#discover">Discover</a><a href="index.html">Home</a><a href="assistant.html">Ask LifeLoop</a><a href="history.html">History</a><a href="community.html" class="active" aria-current="page">Community</a><a href="team.html">Our Team</a><a href="profile.html">Profile</a>
+        </div>
+        <div class="nav-actions">
+          <button class="theme-btn" id="themeToggle" type="button" aria-label="Toggle color theme">Theme</button>
+          <div class="notification-menu">
+            <button class="notif-btn" id="notifButton" type="button" aria-label="Notifications" aria-expanded="false">
+              <span class="notif-bell-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></span><span class="notif-badge" id="notifBadge" hidden>0</span>
+            </button>
+            <div class="notif-panel" id="notifPanel" hidden>
+              <div class="notif-panel-head"><strong>Notifications</strong><button id="markAllReadButton" type="button">Mark all read</button></div>
+              <div id="notifList"><p class="notif-empty">No notifications yet.</p></div>
+            </div>
+          </div>
+          <div class="account-menu">
+            <button class="account-btn" id="accountButton" type="button" aria-expanded="false">
+              <span class="avatar" id="userAvatar">U</span>
+              <span id="navUserName">Account</span>
+            </button>
+            <div class="account-panel" id="accountPanel" hidden>
+              <p class="account-label">Signed in as</p>
+              <strong id="accountName">User</strong>
+              <span id="accountEmail">demo account</span>
+              <button class="logout-btn" id="logoutButton" type="button">Log out</button>
+            </div>
+          </div>
+          <button class="navbtn" type="button" onclick="window.location.href='index.html'">Scan an item</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container history-page community-page">
+    <div class="community-layout">
+      <div class="community-main">
+        <div class="section-head">
+          <div class="kicker">LifeLoop community</div>
+          <h2>Share your second-life wins</h2>
+          <p>Post before/after transformations and see what others are doing.</p>
+        </div>
+
+        <input type="search" id="communitySearch" placeholder="Search posts or people..." aria-label="Search posts or people">
+        <div id="searchResults" hidden></div>
+
+        <form id="createPostForm" class="scan-form create-post-form">
+          <div class="field">
+            <label for="postDescription">What did you do?</label>
+            <textarea id="postDescription" rows="3" placeholder="Instead of throwing it away, I..."></textarea>
+          </div>
+          <div class="scan-form-row">
+            <div class="field">
+              <label for="postBeforeImage">Before photo (optional)</label>
+              <input type="file" id="postBeforeImage" accept="image/*">
+            </div>
+            <div class="field">
+              <label for="postAfterImage">After photo (optional)</label>
+              <input type="file" id="postAfterImage" accept="image/*">
+            </div>
+          </div>
+          <div class="form-message" id="postFormMessage"></div>
+          <button class="login-button" type="submit">Share post</button>
+        </form>
+
+        <div id="moderationPanel" class="moderation-panel" hidden>
+          <h3>Open reports</h3>
+          <div id="reportsList"></div>
+        </div>
+
+        <div id="feedList" class="feed-list"></div>
+        <div class="pagination" id="feedPagination"></div>
+      </div>
+
+      <aside class="community-sidebar">
+        <div class="leaderboard-panel">
+          <h3>Leaderboard</h3>
+          <div id="leaderboardList"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/postCard.js"></script>
+  <script src="js/community.js"></script>
+</body>
+
+</html>

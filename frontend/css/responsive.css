@@ -1,0 +1,51 @@
+@media (max-width: 1050px) {
+  nav { position: relative; }
+  .mobile-menu-btn { display: inline-flex; align-items: center; }
+  .navlinks { display: none; position: absolute; left: 0; right: 0; top: 66px; padding: 14px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); z-index: 25; flex-direction: column; gap: 8px; }
+  .navlinks.open { display: flex; }
+  .nav-actions { margin-left: auto; }
+  .theme-btn { display: none; }
+}
+@media (max-width: 680px) {
+  nav { height: auto; min-height: 76px; gap: 8px; }
+  .logo { margin-right: auto; }
+  .account-btn > span:last-child, .navbtn { display: none; }
+  .account-panel { right: -4px; }
+  .notif-panel { position: fixed; left: 16px; right: 16px; top: 74px; width: auto; max-height: min(420px, calc(100vh - 100px)); }
+  .hero { padding-bottom: 45px; }
+  .scan-card { width: min(270px, calc(100% - 30px)); }
+  .feature, .impact { border-radius: 24px; }
+  .cta h2 { font-size: 38px; }
+}
+
+/* Scanner modal now holds a lot more content (multi-photo upload,
+   identification, ranked recommendations, guides) — make sure it scrolls
+   instead of overflowing the viewport on any screen size. */
+.modal-box {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .modal { padding: 12px; align-items: flex-start; padding-top: 24px; }
+  .modal-box { padding: 20px 18px; border-radius: 20px; max-height: calc(100vh - 48px); }
+  .scan-form-row { grid-template-columns: 1fr; }
+  .result-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .result-actions { flex-direction: column; align-items: stretch; }
+  .result-actions select, .result-actions button { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .item-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .item-card-actions { flex-wrap: wrap; width: 100%; }
+  .item-card-score { order: -1; }
+}
+
+@media (max-width: 400px) {
+  .photo-preview-list img { width: 52px; height: 52px; }
+  .rec-alt-row { flex-wrap: wrap; }
+}

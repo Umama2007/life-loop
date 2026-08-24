@@ -1,0 +1,35 @@
+.history-page { padding: 32px 0 72px; }
+
+.navlinks a.active { color: var(--green); }
+
+.history-filters {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 24px;
+}
+.history-filters input,
+.history-filters select {
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px;
+  background: var(--white); color: var(--ink); font-family: inherit; font-size: 13px;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.history-filters input:focus,
+.history-filters select:focus {
+  border-color: var(--green2); box-shadow: 0 0 0 3px var(--mint), 0 0 0 4px var(--green2); outline: none;
+}
+.history-filters input[type="search"] { flex: 1 1 220px; min-width: 180px; }
+.history-filters select { flex: 0 1 160px; }
+
+.pagination {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; flex-wrap: wrap;
+}
+.pagination button {
+  border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  border-radius: var(--radius-sm); padding: 8px 14px; font-weight: 700; cursor: pointer; font-size: 13px;
+  transition: all 0.2s var(--ease);
+}
+.pagination button:not(:disabled):hover { border-color: var(--green2); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.pagination button.active { background: var(--green); color: #fff; border-color: var(--green); }
+.pagination button:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .history-filters select, .history-filters input { flex: 1 1 100%; }
+}
