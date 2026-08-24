@@ -302,8 +302,9 @@ html.auth-pending body { visibility: hidden; }
     }
 
     .hero h1 {
-      font-size: clamp(40px, 5.2vw, 66px);
-      letter-spacing: -2.4px;
+      font-size: clamp(36px, 4.6vw, 56px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
       max-width: 640px
     }
 
@@ -918,7 +919,7 @@ html.auth-pending body { visibility: hidden; }
 
     @media(max-width:600px) {
       .hero h1 {
-        font-size: 47px
+        font-size: 36px
       }
 
       .stats,
