@@ -5,7 +5,11 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-const client = new MongoClient(process.env.MONGODB_URI);
+const client = new MongoClient(process.env.MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 10000,
+  connectTimeoutMS: 10000
+});
 let dbPromise = client.connect().then(() => client.db());
 
 async function getDb() {

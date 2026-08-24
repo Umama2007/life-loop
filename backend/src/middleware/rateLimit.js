@@ -17,18 +17,24 @@ const localBuckets = new Map();
 
 function rateLimit({ windowMs, max, message }) {
   return async (req, res, next) => {
+    console.log("[RATE-LIMIT] Middleware started for IP:", req.ip, "Path:", req.path);
     const key = `rl:${req.ip}:${req.baseUrl}${req.path}`;
     const windowSeconds = Math.ceil(windowMs / 1000);
 
     if (redis) {
       try {
-        const count = await redis.incr(key);
+        console.log("[RATE-LIMIT] Calling Upstash Redis...");
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("UPSTASH_TIMEOUT")), 5000));
+        
+        const count = await Promise.race([redis.incr(key), timeoutPromise]);
+        console.log("[RATE-LIMIT] Upstash Redis call completed successfully.");
+        
         if (count === 1) {
-          await redis.expire(key, windowSeconds);
+          await Promise.race([redis.expire(key, windowSeconds), timeoutPromise]);
         }
         
         if (count > max) {
-          const ttl = await redis.ttl(key);
+          const ttl = await Promise.race([redis.ttl(key), timeoutPromise]);
           res.set("Retry-After", ttl > 0 ? ttl.toString() : windowSeconds.toString());
           return res.status(429).json({
             success: false,
@@ -38,7 +44,11 @@ function rateLimit({ windowMs, max, message }) {
         }
         return next();
       } catch (err) {
-        console.error("Redis rate limiting error:", err);
+        if (err.message === "UPSTASH_TIMEOUT") {
+          console.warn("[RATE-LIMIT] Upstash rate-limit check timed out, failing open.");
+        } else {
+          console.error("Redis rate limiting error:", err);
+        }
         // Fail open if Redis is down so we don't break the whole app
         return next();
       }

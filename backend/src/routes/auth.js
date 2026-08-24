@@ -37,6 +37,7 @@ function setSessionCookie(res, userId, rememberMe) {
 router.post("/register", authRateLimit, async (req, res) => {
   const { name, email, password } = req.body || {};
   const cleanEmail = String(email || "").trim().toLowerCase();
+  console.log("[AUTH-REGISTER] Request received for email:", cleanEmail);
   const cleanName = String(name || "").trim();
 
   if (cleanName.length < 2) {
@@ -49,6 +50,7 @@ router.post("/register", authRateLimit, async (req, res) => {
     return sendError(res, 400, "WEAK_PASSWORD", "Password must be at least 6 characters.");
   }
 
+  console.log("[AUTH-REGISTER] About to read users from MongoDB...");
   const users = await readCollection("users");
   if (users.some((u) => u.email === cleanEmail)) {
     return sendError(res, 409, "EMAIL_TAKEN", "An account with that email already exists. Try signing in instead.");
@@ -63,7 +65,9 @@ router.post("/register", authRateLimit, async (req, res) => {
     createdAt: new Date().toISOString(),
   };
   users.push(user);
+  console.log("[AUTH-REGISTER] MongoDB read complete. Writing new user...");
   await writeCollection("users", users);
+  console.log("[AUTH-REGISTER] User written successfully.");
 
   setSessionCookie(res, user.id, Boolean(req.body.rememberMe));
   res.status(201).json({ user: publicUser(user) });
