@@ -22,10 +22,7 @@ const authRoutes = require("./routes/auth");
 const itemsRoutes = require("./routes/items");
 const communityRoutes = require("./routes/community");
 const notificationsRoutes = require("./routes/notifications");
-const jobsRoutes = require("./routes/jobs");
 const nearbyRoutes = require("./routes/nearby");
-const jobQueue = require("./services/jobQueue");
-const { ensureDataFiles } = require("./db");
 const swaggerUi = require("swagger-ui-express");
 const openapiSpec = require("../openapi.json");
 
@@ -35,21 +32,19 @@ if (!process.env.JWT_SECRET) {
   );
   process.exit(1);
 }
-
-ensureDataFiles();
-jobQueue.recoverStaleJobs();
-
 const app = express();
 app.set('trust proxy', 1); // Trust reverse proxy so secure cookies and rate limiters work
 const PORT = process.env.PORT || 3000;
 const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, "..", "uploads");
 
-// A handful of standard security headers. LifeLoop's frontend and API are
-// served from the same origin (this same Express app), so there is no
-// legitimate cross-origin use case — CORS middleware was deliberately
-// removed rather than configured, since permissive CORS with credentials
-// enabled is unnecessary attack surface for an app that never needs it.
+const cors = require("cors");
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true,
+}));
+
+// Standard security headers
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -66,7 +61,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/items", itemsRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/notifications", notificationsRoutes);
-app.use("/api/jobs", jobsRoutes);
 app.use("/api/nearby", nearbyRoutes);
 app.get("/api/openapi.json", (req, res) => res.json(openapiSpec));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));

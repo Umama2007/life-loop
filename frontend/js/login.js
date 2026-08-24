@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+// API_BASE_URL is now defined in config.js
 
 const form = document.getElementById("loginForm");
 const loginButton = document.getElementById("loginButton");
@@ -16,7 +16,7 @@ let mode = "signin"; // "signin" | "signup"
 // If already signed in, skip the login page entirely.
 (async () => {
   try {
-    const response = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+    const response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: "include" });
     if (response.ok) window.location.replace("index.html");
   } catch {
     // Ignore — if the check fails, just show the login form.
@@ -96,7 +96,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const endpoint = mode === "signup" ? "register" : "login";
-    const response = await fetch(`${API_BASE}/auth/${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

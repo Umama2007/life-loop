@@ -1,55 +1,3 @@
-const express = require("express");
-const multer = require("multer");
-const { v4: uuidv4 } = require("uuid");
-const { readCollection, writeCollection, getCollection } = require("../db");
-const { requireAuth } = require("../middleware/auth");
-const { rateLimit } = require("../middleware/rateLimit");
-const { sendError } = require("../utils/errors");
-const { isOneOf, isNonEmptyString, toFiniteNumber, clampPagination } = require("../utils/validate");
-const { imageFileFilter, verifyUploadedImages } = require("../utils/imageUpload");
-const { uploadBufferToCloudinary } = require("../utils/cloudinary");
-const { analyzeItem, ACTION_LABELS, VALID_ACTIONS, CATEGORY_OPTIONS, CONDITION_OPTIONS } = require("../services/recommendation");
-const assistants = require("../services/assistants");
-const badges = require("../services/badges");
-const ocr = require("../services/ocr");
-const barcode = require("../services/barcode");
-const chatbot = require("../services/chatbot");
-
-const router = express.Router();
-
-const MAX_IMAGES_PER_SCAN = 6;
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024, files: MAX_IMAGES_PER_SCAN },
-  fileFilter: imageFileFilter,
-});
-
-const ASSISTANT_TYPES = ["repair", "reuse", "resell", "donate", "recycle"];
-
-const CATEGORY_IMPACT = {
-  clothing: { weightKg: 0.4, valueINR: 500 },
-  electronics: { weightKg: 1.8, valueINR: 3000 },
-  tech: { weightKg: 0.6, valueINR: 8000 },
-  furniture: { weightKg: 12, valueINR: 4000 },
-  home: { weightKg: 2, valueINR: 1200 },
-};
-const IMPACT_METHODOLOGY_NOTE =
-  "Estimates are illustrative averages per category (not per specific item) and only counted for items you've marked with an actual action other than recycle. Categories without a stated average show as unavailable rather than a guessed number.";
-
-function decorateItem(item) {
-  return { ...item, primaryActionLabel: ACTION_LABELS[item.primaryAction] || item.primaryAction };
-}
-
-// ---- Scanning / parsing (Creation) ----------------------------------------
-router.post(
-  "/scan",
-  requireAuth,
-  rateLimit({ windowMs: 10 * 60 * 1000, max: 20, message: "Too many scans in a short time. Please wait a bit." }),
-  upload.array("photos", MAX_IMAGES_PER_SCAN),
-  verifyUploadedImages,
-  async (req, res) => {
-    const { name, category, condition, ageYears, brand, model, material } = req.body || {};
 
     if (!isNonEmptyString(name)) return sendError(res, 400, "INVALID_NAME", "Please tell us what the item is.");
     if (category && !isOneOf(category, CATEGORY_OPTIONS)) return sendError(res, 400, "INVALID_CATEGORY", "Unrecognized category.");
@@ -97,6 +45,7 @@ router.post(
     if (isNonEmptyString(model)) analysis.identification.model = model.trim();
     if (isNonEmptyString(material)) analysis.identification.material = material.trim();
 
+    const items = await readCollection("items");
     const item = {
       id: uuidv4(),
       userId: req.userId,
@@ -121,7 +70,8 @@ router.post(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await (await getCollection("items")).insertOne(item);
+    items.push(item);
+    await writeCollection("items", items);
     await badges.checkAndAwardBadges(req.userId);
 
     res.status(201).json({ item: decorateItem(item) });
@@ -231,12 +181,11 @@ router.get ("/:id", requireAuth, async (req, res) => {
 // ---- Update (corrections, actual action taken, notes, saved) -------------
 
 router.patch("/:id", requireAuth, async (req, res) => {
-  const itemsCol = await getCollection("items");
-  const item = await itemsCol.findOne({ id: req.params.id, userId: req.userId }, { projection: { _id: 0 } });
+  const items = await readCollection("items");
+  const item = items.find((i) => i.id === req.params.id && i.userId === req.userId);
   if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
   const { name, category, condition, ageYears, brand, model, material, userAction, notes, saved, recompute } = req.body || {};
-  const updateFields = {};
 
   if (userAction !== undefined) {
     if (userAction !== null && !isOneOf(userAction, VALID_ACTIONS)) {
@@ -244,19 +193,16 @@ router.patch("/:id", requireAuth, async (req, res) => {
     }
     item.userAction = userAction;
     item.userActionAt = userAction ? new Date().toISOString() : null;
-    updateFields.userAction = item.userAction;
-    updateFields.userActionAt = item.userActionAt;
   }
-  if (typeof saved === "boolean") { item.saved = saved; updateFields.saved = saved; }
-  if (typeof notes === "string") { item.notes = notes.slice(0, 2000); updateFields.notes = item.notes; }
+  if (typeof saved === "boolean") item.saved = saved;
+  if (typeof notes === "string") item.notes = notes.slice(0, 2000);
 
   let correctionMade = false;
-  item.identification = item.identification || {};
-  if (isNonEmptyString(name) && name.trim() !== item.name) { item.name = name.trim(); updateFields.name = item.name; correctionMade = true; }
-  if (category && isOneOf(category, CATEGORY_OPTIONS) && category !== item.category) { item.category = category; updateFields.category = category; correctionMade = true; }
-  if (condition && isOneOf(condition, CONDITION_OPTIONS) && condition !== item.condition) { item.condition = condition; updateFields.condition = condition; correctionMade = true; }
+  if (isNonEmptyString(name) && name.trim() !== item.name) { item.name = name.trim(); correctionMade = true; }
+  if (category && isOneOf(category, CATEGORY_OPTIONS) && category !== item.category) { item.category = category; correctionMade = true; }
+  if (condition && isOneOf(condition, CONDITION_OPTIONS) && condition !== item.condition) { item.condition = condition; correctionMade = true; }
   const parsedAge = toFiniteNumber(ageYears);
-  if (ageYears !== undefined && parsedAge !== item.ageYears) { item.ageYears = Number.isFinite(parsedAge) ? parsedAge : null; updateFields.ageYears = item.ageYears; correctionMade = true; }
+  if (ageYears !== undefined && parsedAge !== item.ageYears) { item.ageYears = Number.isFinite(parsedAge) ? parsedAge : null; correctionMade = true; }
   if (isNonEmptyString(brand)) { item.identification.brand = brand.trim(); correctionMade = true; }
   if (isNonEmptyString(model)) { item.identification.model = model.trim(); correctionMade = true; }
   if (isNonEmptyString(material)) { item.identification.material = material.trim(); correctionMade = true; }
@@ -266,7 +212,6 @@ router.patch("/:id", requireAuth, async (req, res) => {
     item.identification.uncertaintyReason = null;
     item.identification.correctedByUser = true;
   }
-  updateFields.identification = item.identification;
 
   if (correctionMade && recompute) {
     try {
@@ -276,39 +221,32 @@ router.patch("/:id", requireAuth, async (req, res) => {
         condition: item.condition,
         ageYears: item.ageYears,
         images: [],
-        hasPhotos: (item.images || []).length > 0,
+        hasPhotos: item.images.length > 0,
       });
       item.recommendations = analysis.recommendations;
       item.primaryAction = analysis.recommendations[0].action;
       item.lifePotential = analysis.lifePotential;
       item.note = analysis.note;
       item.source = analysis.source;
-      item.assistantCache = {};
-
-      updateFields.recommendations = item.recommendations;
-      updateFields.primaryAction = item.primaryAction;
-      updateFields.lifePotential = item.lifePotential;
-      updateFields.note = item.note;
-      updateFields.source = item.source;
-      updateFields.assistantCache = item.assistantCache;
+      item.assistantCache = {}; // stale after recompute
     } catch (err) {
       console.warn("Recompute after correction failed, keeping previous recommendations:", err.message);
     }
   }
 
   item.updatedAt = new Date().toISOString();
-  updateFields.updatedAt = item.updatedAt;
-
-  await itemsCol.updateOne({ id: req.params.id, userId: req.userId }, { $set: updateFields });
+  await writeCollection("items", items);
   if (userAction) await badges.checkAndAwardBadges(req.userId);
   res.json({ item: decorateItem(item) });
 });
 
 router.delete ("/:id", requireAuth, async (req, res) => {
-  const itemsCol = await getCollection("items");
-  const result = await itemsCol.deleteOne({ id: req.params.id, userId: req.userId });
-  if (result.deletedCount === 0) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
+  const items = await readCollection("items");
+  const item = items.find((i) => i.id === req.params.id && i.userId === req.userId);
+  if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
+  // Images are on Cloudinary, we don't delete them locally anymore
+  await writeCollection("items", items.filter((i) => i.id !== req.params.id));
   res.json({ success: true });
 });
 

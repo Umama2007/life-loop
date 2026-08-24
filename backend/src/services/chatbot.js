@@ -98,7 +98,7 @@ async function aiAnswer(item, questionType) {
 
   const parsed = await aiService.generateJSON({
     prompt,
-    maxTokens: 120,
+    maxTokens: 500,
     schema: { type: "OBJECT", properties: { answer: { type: "STRING" } }, required: ["answer"] },
   });
 

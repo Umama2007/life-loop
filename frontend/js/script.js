@@ -113,7 +113,7 @@ function setupIdentificationCorrection() {
       condition: document.getElementById("correctCondition").value,
       recompute: true,
     };
-    const response = await fetch(`${API_BASE}/items/${currentItem.id}`, {
+    const response = await fetch(`${API_BASE_URL}/items/${currentItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -132,7 +132,7 @@ function setupResultActions() {
   document.getElementById("saveItemButton").addEventListener("click", async () => {
     if (!currentItem) return;
     const nextSaved = !currentItem.saved;
-    const response = await fetch(`${API_BASE}/items/${currentItem.id}`, {
+    const response = await fetch(`${API_BASE_URL}/items/${currentItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -149,7 +149,7 @@ function setupResultActions() {
   document.getElementById("actualActionSelect").addEventListener("change", async (event) => {
     if (!currentItem) return;
     const userAction = event.target.value || null;
-    const response = await fetch(`${API_BASE}/items/${currentItem.id}`, {
+    const response = await fetch(`${API_BASE_URL}/items/${currentItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -240,8 +240,8 @@ function renderItemList(items) {
 async function loadDashboard() {
   try {
     const [statsResponse, itemsResponse] = await Promise.all([
-      fetch(`${API_BASE}/items/stats`, { credentials: "include" }),
-      fetch(`${API_BASE}/items?sort=newest&pageSize=8`, { credentials: "include" }),
+      fetch(`${API_BASE_URL}/items/stats`, { credentials: "include" }),
+      fetch(`${API_BASE_URL}/items?sort=newest&pageSize=8`, { credentials: "include" }),
     ]);
     if (statsResponse.ok) renderStats((await statsResponse.json()).stats);
     if (itemsResponse.ok) renderItemList((await itemsResponse.json()).items);
@@ -251,7 +251,7 @@ async function loadDashboard() {
 }
 
 async function toggleSaved(id, saved) {
-  await fetch(`${API_BASE}/items/${id}`, {
+  await fetch(`${API_BASE_URL}/items/${id}`, {
     method: "PATCH",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -261,7 +261,7 @@ async function toggleSaved(id, saved) {
 }
 
 async function deleteItem(id) {
-  await fetch(`${API_BASE}/items/${id}`, { method: "DELETE", credentials: "include" });
+  await fetch(`${API_BASE_URL}/items/${id}`, { method: "DELETE", credentials: "include" });
   loadDashboard();
 }
 
@@ -285,7 +285,7 @@ function setupQrScan() {
     try {
       const formData = new FormData();
       formData.append("codeImage", file);
-      const response = await fetch(`${API_BASE}/items/scan-code`, { method: "POST", credentials: "include", body: formData });
+      const response = await fetch(`${API_BASE_URL}/items/scan-code`, { method: "POST", credentials: "include", body: formData });
       const data = await response.json();
 
       if (!response.ok) {
@@ -322,7 +322,7 @@ function setupScanForm() {
       formData.delete("photos");
       selectedFiles.forEach((file) => formData.append("photos", file));
 
-      const response = await fetch(`${API_BASE}/items/scan`, {
+      const response = await fetch(`${API_BASE_URL}/items/scan`, {
         method: "POST",
         credentials: "include",
         body: formData,

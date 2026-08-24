@@ -60,10 +60,10 @@ function getBadgeDefinitions() {
 // Evaluates all badge criteria for a user against current data, awards any
 // newly-earned badges (idempotent — never re-awards one already held), and
 // returns the user's full unlocked-badge list afterward.
-function checkAndAwardBadges(userId) {
-  const items = readCollection("items").filter((i) => i.userId === userId);
-  const posts = readCollection("posts").filter((p) => p.userId === userId);
-  const userBadges = readCollection("userBadges");
+async function checkAndAwardBadges(userId) {
+  const items = (await readCollection("items")).filter((i) => i.userId === userId);
+  const posts = (await readCollection("posts")).filter((p) => p.userId === userId);
+  const userBadges = await readCollection("userBadges");
   const alreadyUnlocked = new Set(userBadges.filter((b) => b.userId === userId).map((b) => b.badgeId));
 
   let changed = false;
@@ -71,17 +71,17 @@ function checkAndAwardBadges(userId) {
     if (alreadyUnlocked.has(badge.id)) continue;
     if (badge.check({ items, posts })) {
       userBadges.push({ id: `${userId}:${badge.id}`, userId, badgeId: badge.id, unlockedAt: new Date().toISOString() });
-      createNotification(userId, "badge", `Badge unlocked: ${badge.title}`, badge.description, "profile.html");
+      await createNotification(userId, "badge", `Badge unlocked: ${badge.title}`, badge.description, "profile.html");
       changed = true;
     }
   }
-  if (changed) writeCollection("userBadges", userBadges);
+  if (changed) await writeCollection("userBadges", userBadges);
 
-  return readCollection("userBadges").filter((b) => b.userId === userId);
+  return (await readCollection("userBadges")).filter((b) => b.userId === userId);
 }
 
-function getUserBadges(userId) {
-  return readCollection("userBadges").filter((b) => b.userId === userId);
+async function getUserBadges(userId) {
+  return (await readCollection("userBadges")).filter((b) => b.userId === userId);
 }
 
 module.exports = { getBadgeDefinitions, checkAndAwardBadges, getUserBadges, BADGE_POINTS: 50 };

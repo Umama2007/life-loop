@@ -173,6 +173,16 @@ for a single-user local app the realistic threat model doesn't call for it,
 but rate limiting is in place as a lighter-weight mitigation for the same
 class of abuse.
 
+## Deploying Frontend and Backend Separately (e.g. Vercel + Render)
+
+LifeLoop is configured to allow the frontend to be deployed independently of the backend (for example, hosting the frontend on Vercel and the backend API on Render).
+
+To do this, you must set up the connection between them:
+1. **Frontend**: Open `frontend/js/config.js` and change `API_BASE_URL` to point to your live backend URL (e.g., `https://your-backend.onrender.com/api`).
+2. **Backend**: In your backend hosting dashboard (e.g., Render or Railway), add a new environment variable `FRONTEND_URL` and set it to your live frontend URL (e.g., `https://your-frontend.vercel.app`). This tells the backend to allow cross-origin requests (CORS) from your frontend.
+
+*Note: Cross-origin authentication relies on `SameSite=None` cookies. Many browsers (like Safari) block these third-party cookies by default. If users cannot log in, they may need to disable tracking prevention, or you must host both on the same root domain.*
+
 ## Deploying beyond your own machine (Railway)
 
 If you are deploying LifeLoop to a hosting platform like Railway, you must be aware of its architectural limitations. LifeLoop was designed to run locally, so it uses local files for data storage and memory for background jobs.

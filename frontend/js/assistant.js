@@ -1,7 +1,7 @@
 let currentItem = null;
 
 async function loadItems() {
-  const response = await fetch(`${API_BASE}/items?pageSize=100`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/items?pageSize=100`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 

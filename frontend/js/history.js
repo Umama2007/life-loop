@@ -24,7 +24,7 @@ function buildQuery(page) {
 
 async function loadPage(page) {
   currentPage = page;
-  const response = await fetch(`${API_BASE}/items?${buildQuery(page)}`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/items?${buildQuery(page)}`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 
@@ -84,7 +84,7 @@ function renderList(items) {
     deleteButton.type = "button";
     deleteButton.textContent = "Remove";
     deleteButton.addEventListener("click", async () => {
-      await fetch(`${API_BASE}/items/${item.id}`, { method: "DELETE", credentials: "include" });
+      await fetch(`${API_BASE_URL}/items/${item.id}`, { method: "DELETE", credentials: "include" });
       loadPage(currentPage);
     });
     actions.appendChild(deleteButton);
@@ -123,7 +123,7 @@ function renderPagination(page, totalPages) {
 }
 
 async function openDetail(id) {
-  const response = await fetch(`${API_BASE}/items/${id}`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/items/${id}`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 
@@ -187,7 +187,7 @@ function setupDetailModal() {
   document.getElementById("detailSaveToggle").addEventListener("click", async () => {
     if (!currentDetailItem) return;
     const nextSaved = !currentDetailItem.saved;
-    const response = await fetch(`${API_BASE}/items/${currentDetailItem.id}`, {
+    const response = await fetch(`${API_BASE_URL}/items/${currentDetailItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -203,7 +203,7 @@ function setupDetailModal() {
 
   document.getElementById("detailActualAction").addEventListener("change", async (event) => {
     if (!currentDetailItem) return;
-    const response = await fetch(`${API_BASE}/items/${currentDetailItem.id}`, {
+    const response = await fetch(`${API_BASE_URL}/items/${currentDetailItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -219,7 +219,7 @@ function setupDetailModal() {
 
   document.getElementById("detailSaveNotes").addEventListener("click", async () => {
     if (!currentDetailItem) return;
-    await fetch(`${API_BASE}/items/${currentDetailItem.id}`, {
+    await fetch(`${API_BASE_URL}/items/${currentDetailItem.id}`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

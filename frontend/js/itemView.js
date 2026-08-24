@@ -3,7 +3,7 @@
 // Used both by the scanner result panel (script.js) and the item detail
 // view on the History page (history.js), so the two stay consistent.
 //
-// Relies on API_BASE already being declared by auth.js, which every page
+// Relies on API_BASE_URL already being declared by config.js, which every page
 // that includes this file loads first.
 
 const ACTION_LABELS = {
@@ -99,30 +99,13 @@ function renderRecommendations({ primaryEl, alternativesEl }, item, onViewGuide)
 }
 
 async function fetchGuide(itemId, type, { regenerate = false } = {}) {
-  const response = await fetch(`${API_BASE}/items/${itemId}/assistant/${type}?regenerate=${regenerate}`, {
+  const response = await fetch(`${API_BASE_URL}/items/${itemId}/assistant/${type}?regenerate=${regenerate}`, {
     credentials: "include",
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "Could not load this guide.");
-
-  if (data.guide) return data.guide; // already cached, returned immediately
-  if (data.jobId) return pollJobUntilDone(data.jobId); // queued as a background job
+  if (data.guide) return data.guide;
   throw new Error("Unexpected response while generating this guide.");
-}
-
-async function pollJobUntilDone(jobId, { intervalMs = 700, timeoutMs = 40000 } = {}) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const response = await fetch(`${API_BASE}/jobs/${jobId}`, { credentials: "include" });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Could not check the job's status.");
-
-    if (data.job.status === "done") return data.job.result;
-    if (data.job.status === "failed") throw new Error(data.job.error || "Guide generation failed.");
-
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  throw new Error("This is taking longer than expected. Please try again in a moment.");
 }
 
 function renderGuideContent(container, type, guide) {
@@ -252,7 +235,7 @@ function findAndRenderNearby(action, button, resultsEl) {
       button.textContent = "Searching nearby...";
       try {
         const { latitude, longitude } = position.coords;
-        const response = await fetch(`${API_BASE}/nearby?lat=${latitude}&lng=${longitude}&action=${action}`, {
+        const response = await fetch(`${API_BASE_URL}/nearby?lat=${latitude}&lng=${longitude}&action=${action}`, {
           credentials: "include",
         });
         const data = await response.json();
@@ -339,7 +322,7 @@ function setupChatSection(buttonsContainer, logContainer, itemId) {
 
       freshButton.disabled = true;
       try {
-        const response = await fetch(`${API_BASE}/items/${itemId}/chat/${questionType}`, { credentials: "include" });
+        const response = await fetch(`${API_BASE_URL}/items/${itemId}/chat/${questionType}`, { credentials: "include" });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Could not get an answer right now.");
         answerEl.textContent = data.answer;

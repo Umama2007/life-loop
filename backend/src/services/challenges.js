@@ -37,15 +37,17 @@ function countForMetric(metric, items) {
 
 // Returns every challenge with the current user's join/progress/completion
 // status layered on top.
-function getChallengesForUser(userId) {
-  const items = readCollection("items").filter((i) => i.userId === userId);
-  const userChallenges = readCollection("userChallenges").filter((c) => c.userId === userId);
+async function getChallengesForUser(userId) {
+  const items = (await readCollection("items")).filter((i) => i.userId === userId);
+  const userChallenges = (await readCollection("userChallenges")).filter((c) => c.userId === userId);
   let changed = false;
 
-  const result = CHALLENGES.map((def) => {
+  const result = [];
+  for (const def of CHALLENGES) {
     const joined = userChallenges.find((c) => c.challengeId === def.id);
     if (!joined) {
-      return { ...def, joined: false, progress: 0, completed: false, joinedAt: null, completedAt: null };
+      result.push({ ...def, joined: false, progress: 0, completed: false, joinedAt: null, completedAt: null });
+      continue;
     }
 
     const relevantItems = items.filter((i) => i.userActionAt && new Date(i.userActionAt) >= new Date(joined.joinedAt));
@@ -55,30 +57,30 @@ function getChallengesForUser(userId) {
 
     if (completed && !joined.completedAt) {
       joined.completedAt = new Date().toISOString();
-      createNotification(userId, "challenge", `Challenge completed: ${def.title}`, def.description, "profile.html");
+      await createNotification(userId, "challenge", `Challenge completed: ${def.title}`, def.description, "profile.html");
       changed = true;
     }
 
-    return { ...def, joined: true, progress: Math.min(progress, def.target), completed, joinedAt: joined.joinedAt, completedAt: joined.completedAt };
-  });
+    result.push({ ...def, joined: true, progress: Math.min(progress, def.target), completed, joinedAt: joined.joinedAt, completedAt: joined.completedAt });
+  }
 
   if (changed) {
-    const all = readCollection("userChallenges");
-    writeCollection("userChallenges", all.map((c) => userChallenges.find((u) => u.id === c.id) || c));
+    const all = await readCollection("userChallenges");
+    await writeCollection("userChallenges", all.map((c) => userChallenges.find((u) => u.id === c.id) || c));
   }
 
   return result;
 }
 
-function joinChallenge(userId, challengeId) {
+async function joinChallenge(userId, challengeId) {
   if (!CHALLENGES.some((c) => c.id === challengeId)) return null;
-  const userChallenges = readCollection("userChallenges");
+  const userChallenges = await readCollection("userChallenges");
   if (userChallenges.some((c) => c.userId === userId && c.challengeId === challengeId)) {
-    return getChallengesForUser(userId).find((c) => c.id === challengeId);
+    return (await getChallengesForUser(userId)).find((c) => c.id === challengeId);
   }
   userChallenges.push({ id: `${userId}:${challengeId}`, userId, challengeId, joinedAt: new Date().toISOString(), completedAt: null });
-  writeCollection("userChallenges", userChallenges);
-  return getChallengesForUser(userId).find((c) => c.id === challengeId);
+  await writeCollection("userChallenges", userChallenges);
+  return (await getChallengesForUser(userId)).find((c) => c.id === challengeId);
 }
 
 module.exports = { getChallengeDefinitions, getChallengesForUser, joinChallenge, CHALLENGE_POINTS: 100 };

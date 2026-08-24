@@ -27,14 +27,14 @@ function setSessionCookie(res, userId, rememberMe) {
   });
   const cookieOptions = {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true, // Required by browsers for SameSite=None
   };
   if (rememberMe) cookieOptions.maxAge = SEVEN_DAYS_MS * (30 / 7);
   res.cookie(COOKIE_NAME, token, cookieOptions);
 }
 
-router.post("/register", authRateLimit, (req, res) => {
+router.post("/register", authRateLimit, async (req, res) => {
   const { name, email, password } = req.body || {};
   const cleanEmail = String(email || "").trim().toLowerCase();
   const cleanName = String(name || "").trim();
@@ -49,7 +49,7 @@ router.post("/register", authRateLimit, (req, res) => {
     return sendError(res, 400, "WEAK_PASSWORD", "Password must be at least 6 characters.");
   }
 
-  const users = readCollection("users");
+  const users = await readCollection("users");
   if (users.some((u) => u.email === cleanEmail)) {
     return sendError(res, 409, "EMAIL_TAKEN", "An account with that email already exists. Try signing in instead.");
   }
@@ -63,17 +63,17 @@ router.post("/register", authRateLimit, (req, res) => {
     createdAt: new Date().toISOString(),
   };
   users.push(user);
-  writeCollection("users", users);
+  await writeCollection("users", users);
 
   setSessionCookie(res, user.id, Boolean(req.body.rememberMe));
   res.status(201).json({ user: publicUser(user) });
 });
 
-router.post("/login", authRateLimit, (req, res) => {
+router.post("/login", authRateLimit, async (req, res) => {
   const { email, password, rememberMe } = req.body || {};
   const cleanEmail = String(email || "").trim().toLowerCase();
 
-  const users = readCollection("users");
+  const users = await readCollection("users");
   const user = users.find((u) => u.email === cleanEmail);
 
   if (!user || !bcrypt.compareSync(String(password || ""), user.passwordHash)) {
@@ -84,13 +84,13 @@ router.post("/login", authRateLimit, (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
-router.post("/logout", (req, res) => {
-  res.clearCookie(COOKIE_NAME);
+router.post ("/logout", async (req, res) => {
+  res.clearCookie(COOKIE_NAME, { sameSite: "none", secure: true });
   res.json({ success: true });
 });
 
-router.get("/me", requireAuth, (req, res) => {
-  const users = readCollection("users");
+router.get("/me", requireAuth, async (req, res) => {
+  const users = await readCollection("users");
   const user = users.find((u) => u.id === req.userId);
   if (!user) return sendError(res, 401, "NOT_SIGNED_IN", "Not signed in.");
   res.json({ user: publicUser(user) });

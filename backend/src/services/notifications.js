@@ -5,9 +5,9 @@
 const { v4: uuidv4 } = require("uuid");
 const { readCollection, writeCollection } = require("../db");
 
-function createNotification(userId, type, title, message, link = null) {
+async function createNotification(userId, type, title, message, link = null) {
   if (!userId) return;
-  const notifications = readCollection("notifications");
+  const notifications = await readCollection("notifications");
   notifications.push({
     id: uuidv4(),
     userId,
@@ -18,11 +18,11 @@ function createNotification(userId, type, title, message, link = null) {
     read: false,
     createdAt: new Date().toISOString(),
   });
-  writeCollection("notifications", notifications);
+  await writeCollection("notifications", notifications);
 }
 
-function getNotifications(userId, { page = 1, pageSize = 20 } = {}) {
-  const all = readCollection("notifications")
+async function getNotifications(userId, { page = 1, pageSize = 20 } = {}) {
+  const all = (await readCollection("notifications"))
     .filter((n) => n.userId === userId)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -34,18 +34,18 @@ function getNotifications(userId, { page = 1, pageSize = 20 } = {}) {
   return { items, total, totalPages, unreadCount, page };
 }
 
-function markRead(userId, id) {
-  const notifications = readCollection("notifications");
+async function markRead(userId, id) {
+  const notifications = await readCollection("notifications");
   const notification = notifications.find((n) => n.id === id && n.userId === userId);
   if (notification && !notification.read) {
     notification.read = true;
-    writeCollection("notifications", notifications);
+    await writeCollection("notifications", notifications);
   }
   return notification || null;
 }
 
-function markAllRead(userId) {
-  const notifications = readCollection("notifications");
+async function markAllRead(userId) {
+  const notifications = await readCollection("notifications");
   let changed = false;
   for (const n of notifications) {
     if (n.userId === userId && !n.read) {
@@ -53,7 +53,7 @@ function markAllRead(userId) {
       changed = true;
     }
   }
-  if (changed) writeCollection("notifications", notifications);
+  if (changed) await writeCollection("notifications", notifications);
 }
 
 module.exports = { createNotification, getNotifications, markRead, markAllRead };

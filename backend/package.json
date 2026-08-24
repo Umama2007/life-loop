@@ -12,14 +12,18 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.2",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.1",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jimp": "^1.6.1",
     "jsonwebtoken": "^9.0.2",
     "jsqr": "^1.4.0",
+    "mongodb": "^7.5.0",
     "multer": "^2.0.0",
     "swagger-ui-express": "^5.0.1",
     "tesseract.js": "^5.1.1",

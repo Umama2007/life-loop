@@ -16,7 +16,7 @@ function getQueryParam(name) {
 }
 
 async function loadProfile() {
-  const response = await fetch(`${API_BASE}/community/users/${profileUserId}`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/users/${profileUserId}`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 
@@ -34,7 +34,7 @@ async function loadProfile() {
     followButton.hidden = false;
     followButton.innerHTML = profile.isFollowedByMe ? `${Icons.check()} Following` : "Follow";
     followButton.onclick = async () => {
-      await fetch(`${API_BASE}/community/users/${profileUserId}/follow`, {
+      await fetch(`${API_BASE_URL}/community/users/${profileUserId}/follow`, {
         method: profile.isFollowedByMe ? "DELETE" : "POST",
         credentials: "include",
       });
@@ -56,7 +56,7 @@ async function loadProfile() {
 }
 
 function renderBadges(unlockedBadges) {
-  fetch(`${API_BASE}/community/badges`, { credentials: "include" })
+  fetch(`${API_BASE_URL}/community/badges`, { credentials: "include" })
     .then((r) => r.json())
     .then((data) => {
       const grid = document.getElementById("badgesGrid");
@@ -72,7 +72,7 @@ function renderBadges(unlockedBadges) {
 }
 
 async function loadChallenges() {
-  const response = await fetch(`${API_BASE}/community/challenges`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/challenges`, { credentials: "include" });
   const data = await response.json();
   const list = document.getElementById("challengesList");
   list.innerHTML = "";
@@ -94,7 +94,7 @@ async function loadChallenges() {
       button.type = "button";
       button.textContent = "Join challenge";
       button.addEventListener("click", async () => {
-        await fetch(`${API_BASE}/community/challenges/${challenge.id}/join`, { method: "POST", credentials: "include" });
+        await fetch(`${API_BASE_URL}/community/challenges/${challenge.id}/join`, { method: "POST", credentials: "include" });
         loadChallenges();
         window.refreshNotifications?.();
       });
@@ -106,7 +106,7 @@ async function loadChallenges() {
 }
 
 async function loadProfilePosts() {
-  const response = await fetch(`${API_BASE}/community/posts?userId=${profileUserId}&pageSize=20`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/posts?userId=${profileUserId}&pageSize=20`, { credentials: "include" });
   const data = await response.json();
   const container = document.getElementById("profilePosts");
   const empty = document.getElementById("profilePostsEmpty");
@@ -121,23 +121,23 @@ async function loadProfilePosts() {
   data.posts.forEach((post) => {
     const card = renderPostCard(post, me.id, {
       onLike: async (p, like) => {
-        await fetch(`${API_BASE}/community/posts/${p.id}/like`, { method: like ? "POST" : "DELETE", credentials: "include" });
+        await fetch(`${API_BASE_URL}/community/posts/${p.id}/like`, { method: like ? "POST" : "DELETE", credentials: "include" });
         loadProfilePosts();
       },
       onToggleComments: async (p, section) => {
         if (!section.hidden) { section.hidden = true; return; }
         section.hidden = false;
-        const r = await fetch(`${API_BASE}/community/posts/${p.id}`, { credentials: "include" });
+        const r = await fetch(`${API_BASE_URL}/community/posts/${p.id}`, { credentials: "include" });
         const d = await r.json();
         renderComments(section, d.comments, me.id, {
           onAddComment: async (text) => {
-            await fetch(`${API_BASE}/community/posts/${p.id}/comments`, {
+            await fetch(`${API_BASE_URL}/community/posts/${p.id}/comments`, {
               method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
             });
             loadProfilePosts();
           },
           onDeleteComment: async (comment) => {
-            await fetch(`${API_BASE}/community/comments/${comment.id}`, { method: "DELETE", credentials: "include" });
+            await fetch(`${API_BASE_URL}/community/comments/${comment.id}`, { method: "DELETE", credentials: "include" });
             loadProfilePosts();
           },
         });
@@ -145,20 +145,20 @@ async function loadProfilePosts() {
       onEdit: async (p) => {
         const next = window.prompt("Edit your post:", p.description);
         if (next === null) return;
-        await fetch(`${API_BASE}/community/posts/${p.id}`, {
+        await fetch(`${API_BASE_URL}/community/posts/${p.id}`, {
           method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description: next }),
         });
         loadProfilePosts();
       },
       onDelete: async (p) => {
         if (!window.confirm("Delete this post?")) return;
-        await fetch(`${API_BASE}/community/posts/${p.id}`, { method: "DELETE", credentials: "include" });
+        await fetch(`${API_BASE_URL}/community/posts/${p.id}`, { method: "DELETE", credentials: "include" });
         loadProfilePosts();
       },
       onReport: async (p) => {
         const reason = window.prompt("Why are you reporting this post?");
         if (!reason) return;
-        await fetch(`${API_BASE}/community/report`, {
+        await fetch(`${API_BASE_URL}/community/report`, {
           method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ targetType: "post", targetId: p.id, reason }),
         });
@@ -176,7 +176,7 @@ function setupBioEditing() {
   });
   document.getElementById("saveBioButton").addEventListener("click", async () => {
     const bio = document.getElementById("profileBioInput").value;
-    await fetch(`${API_BASE}/community/profile`, {
+    await fetch(`${API_BASE_URL}/community/profile`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

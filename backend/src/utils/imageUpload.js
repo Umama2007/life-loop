@@ -37,11 +37,8 @@ async function verifyUploadedImages(req, res, next) {
 
   for (const file of files) {
     try {
-      await Jimp.read(file.path);
+      await Jimp.read(file.buffer);
     } catch {
-      // Clean up every file from this request, not just the bad one, so we
-      // don't leave orphaned uploads behind.
-      for (const f of files) fs.unlink(f.path, () => {});
       return sendError(res, 400, "INVALID_IMAGE", "One of the uploaded files isn't a valid image.");
     }
   }

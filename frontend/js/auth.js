@@ -2,12 +2,11 @@
 // login/register, so the frontend never touches passwords or tokens — it
 // just asks the backend "who am I?" and acts on the answer.
 
-const API_BASE = "/api";
 let cachedUser = null;
 
 async function fetchCurrentUser() {
   try {
-    const response = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+    const response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: "include" });
     if (!response.ok) {
       cachedUser = null;
       return null;
@@ -39,7 +38,7 @@ async function requireLogin() {
 
 async function logout() {
   try {
-    await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST", credentials: "include" });
   } finally {
     cachedUser = null;
     window.location.replace("login.html");

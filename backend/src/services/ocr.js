@@ -29,10 +29,10 @@ function withTimeout(promise, ms) {
 
 // Returns extracted text (may be empty string if no text found), or null if
 // OCR could not run at all (no network for first-time data download, etc).
-async function extractTextFromImage(imagePath) {
+async function extractTextFromImageBuffer(buffer) {
   try {
     const { data } = await withTimeout(
-      Tesseract.recognize(imagePath, "eng", {
+      Tesseract.recognize(buffer, "eng", {
         langPath: LANG_DATA_SOURCE,
         cachePath: CACHE_DIR,
         gzip: true,
@@ -47,4 +47,4 @@ async function extractTextFromImage(imagePath) {
   }
 }
 
-module.exports = { extractTextFromImage };
+module.exports = { extractTextFromImageBuffer };

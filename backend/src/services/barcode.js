@@ -18,9 +18,9 @@
 const { Jimp } = require("jimp");
 const jsQR = require("jsqr");
 
-async function decodeQRFromImage(imagePath) {
+async function decodeQRFromImageBuffer(buffer) {
   try {
-    const image = await Jimp.read(imagePath);
+    const image = await Jimp.read(buffer);
     const { data, width, height } = image.bitmap;
     const result = jsQR(new Uint8ClampedArray(data), width, height);
     return result ? result.data : null;
@@ -45,4 +45,4 @@ async function lookupProductByCode(code) {
   }
 }
 
-module.exports = { decodeQRFromImage, lookupProductByCode };
+module.exports = { decodeQRFromImageBuffer, lookupProductByCode };

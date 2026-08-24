@@ -134,16 +134,28 @@ async function generateJSON({ prompt, images = [], maxTokens = 900, schema = nul
 
   const textOut = candidate?.content?.parts?.map((p) => p.text || "").join("") || "";
   if (!textOut) {
-    const err = new Error("Gemini returned an empty response");
+    const err = new Error(`Gemini returned an empty response (finishReason: ${finishReason || "UNKNOWN"})`);
     console.warn(`Gemini request failed: ${err.message}`);
     throw err;
   }
 
-  const cleaned = textOut.replace(/```json|```/g, "").trim();
-  let parsed;
+  const cleaned = textOut.replace(/```json|```/gi, "").trim();
+  let parsed = null;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch {
+        parsed = null;
+      }
+    }
+  }
+
+  if (!parsed) {
+    console.warn(`Gemini raw response text was: "${textOut.slice(0, 200)}"`);
     const err = new Error("Gemini returned a response that could not be parsed as JSON");
     console.warn(`Gemini request failed: ${err.message}`);
     throw err;

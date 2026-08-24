@@ -3,7 +3,7 @@ let currentPage = 1;
 
 async function loadFeed(page) {
   currentPage = page;
-  const response = await fetch(`${API_BASE}/community/posts?page=${page}&pageSize=10`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/posts?page=${page}&pageSize=10`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 
@@ -16,7 +16,7 @@ async function loadFeed(page) {
 function buildPostCard(post) {
   const card = renderPostCard(post, me.id, {
     onLike: async (p, like) => {
-      await fetch(`${API_BASE}/community/posts/${p.id}/like`, {
+      await fetch(`${API_BASE_URL}/community/posts/${p.id}/like`, {
         method: like ? "POST" : "DELETE",
         credentials: "include",
       });
@@ -29,11 +29,11 @@ function buildPostCard(post) {
       }
       section.hidden = false;
       section.innerHTML = "<p>Loading comments...</p>";
-      const response = await fetch(`${API_BASE}/community/posts/${p.id}`, { credentials: "include" });
+      const response = await fetch(`${API_BASE_URL}/community/posts/${p.id}`, { credentials: "include" });
       const data = await response.json();
       renderComments(section, data.comments, me.id, {
         onAddComment: async (text) => {
-          await fetch(`${API_BASE}/community/posts/${p.id}/comments`, {
+          await fetch(`${API_BASE_URL}/community/posts/${p.id}/comments`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -42,7 +42,7 @@ function buildPostCard(post) {
           loadFeed(currentPage);
         },
         onDeleteComment: async (comment) => {
-          await fetch(`${API_BASE}/community/comments/${comment.id}`, { method: "DELETE", credentials: "include" });
+          await fetch(`${API_BASE_URL}/community/comments/${comment.id}`, { method: "DELETE", credentials: "include" });
           loadFeed(currentPage);
         },
       });
@@ -50,7 +50,7 @@ function buildPostCard(post) {
     onEdit: async (p) => {
       const next = window.prompt("Edit your post:", p.description);
       if (next === null) return;
-      await fetch(`${API_BASE}/community/posts/${p.id}`, {
+      await fetch(`${API_BASE_URL}/community/posts/${p.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -60,13 +60,13 @@ function buildPostCard(post) {
     },
     onDelete: async (p) => {
       if (!window.confirm("Delete this post?")) return;
-      await fetch(`${API_BASE}/community/posts/${p.id}`, { method: "DELETE", credentials: "include" });
+      await fetch(`${API_BASE_URL}/community/posts/${p.id}`, { method: "DELETE", credentials: "include" });
       loadFeed(currentPage);
     },
     onReport: async (p) => {
       const reason = window.prompt("Why are you reporting this post?");
       if (!reason) return;
-      await fetch(`${API_BASE}/community/report`, {
+      await fetch(`${API_BASE_URL}/community/report`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -118,7 +118,7 @@ function setupCreatePost() {
     if (before) formData.append("beforeImage", before);
     if (after) formData.append("afterImage", after);
 
-    const response = await fetch(`${API_BASE}/community/posts`, { method: "POST", credentials: "include", body: formData });
+    const response = await fetch(`${API_BASE_URL}/community/posts`, { method: "POST", credentials: "include", body: formData });
     const data = await response.json();
     if (!response.ok) {
       message.textContent = data.message || "Could not create post.";
@@ -142,7 +142,7 @@ function setupSearch() {
         results.hidden = true;
         return;
       }
-      const response = await fetch(`${API_BASE}/community/search?q=${encodeURIComponent(q)}`, { credentials: "include" });
+      const response = await fetch(`${API_BASE_URL}/community/search?q=${encodeURIComponent(q)}`, { credentials: "include" });
       const data = await response.json();
       results.hidden = false;
       results.innerHTML = "";
@@ -176,7 +176,7 @@ function setupSearch() {
 }
 
 async function loadLeaderboard() {
-  const response = await fetch(`${API_BASE}/community/leaderboard`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/leaderboard`, { credentials: "include" });
   const data = await response.json();
   if (!response.ok) return;
 
@@ -195,7 +195,7 @@ async function loadModerationPanel() {
   const panel = document.getElementById("moderationPanel");
   panel.hidden = false;
 
-  const response = await fetch(`${API_BASE}/community/reports`, { credentials: "include" });
+  const response = await fetch(`${API_BASE_URL}/community/reports`, { credentials: "include" });
   const data = await response.json();
   const list = document.getElementById("reportsList");
   list.innerHTML = "";
@@ -217,7 +217,7 @@ async function loadModerationPanel() {
       const button = document.createElement("button");
       button.textContent = action.replace("_", " ");
       button.addEventListener("click", async () => {
-        await fetch(`${API_BASE}/community/reports/${report.id}/resolve`, {
+        await fetch(`${API_BASE_URL}/community/reports/${report.id}/resolve`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

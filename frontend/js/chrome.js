@@ -33,7 +33,7 @@ function setupAccountMenu() {
 
   logoutButton?.addEventListener("click", logout);
   document.getElementById("headerLogoutButton")?.addEventListener("click", async () => {
-    await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST", credentials: "include" });
     window.location.href = "login.html";
   });
 
