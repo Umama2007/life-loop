@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
-const { readCollection, writeCollection, getCollection } = require("../db");
+const { supabase } = require("../db");
 const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 const { sendError } = require("../utils/errors");
@@ -36,13 +36,22 @@ function deleteUploadedFile(url) {
 // from disk itself, so callers that decorate many posts at once (e.g. the
 // feed list) read each collection exactly once instead of once per post.
 async function decoratePost(post, currentUserId, collections) {
-  const allLikes = collections?.likes || await readCollection("likes");
-  const allComments = collections?.comments || await readCollection("comments");
-  const allUsers = collections?.users || await readCollection("users");
-
-  const likes = allLikes.filter((l) => l.postId === post.id);
-  const commentCount = allComments.filter((c) => c.postId === post.id).length;
-  const author = allUsers.find((u) => u.id === post.userId);
+  let author, likes, commentCount;
+  if (collections) {
+    const allLikes = collections.likes || [];
+    const allComments = collections.comments || [];
+    const allUsers = collections.users || [];
+    likes = allLikes.filter((l) => l.postId === post.id);
+    commentCount = allComments.filter((c) => c.postId === post.id).length;
+    author = allUsers.find((u) => u.id === post.userId);
+  } else {
+    const { data: authorData } = await supabase.from('users').select('*').eq('id', post.userId).single();
+    author = authorData;
+    const { data: likesData } = await supabase.from('likes').select('userId').eq('postId', post.id);
+    likes = likesData || [];
+    const { count } = await supabase.from('comments').select('*', { count: 'exact', head: true }).eq('postId', post.id);
+    commentCount = count || 0;
+  }
   return {
     ...post,
     author: publicProfile(author),
@@ -69,25 +78,23 @@ router.post(
       return sendError(res, 400, "EMPTY_POST", "Add a description or at least one photo.");
     }
 
-    let beforeImageUrl = null;
-    let afterImageUrl = null;
+    let images = [];
     if (beforeFile) {
-      beforeImageUrl = await uploadBufferToCloudinary(beforeFile.buffer, "posts");
+      images.push({ url: await uploadBufferToCloudinary(beforeFile.buffer, "posts") });
     }
     if (afterFile) {
-      afterImageUrl = await uploadBufferToCloudinary(afterFile.buffer, "posts");
+      images.push({ url: await uploadBufferToCloudinary(afterFile.buffer, "posts") });
     }
 
     const post = {
       id: uuidv4(),
       userId: req.userId,
       description: (description || "").trim().slice(0, 2000),
-      beforeImageUrl,
-      afterImageUrl,
+      images,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await (await getCollection("posts")).insertOne(post);
+    await supabase.from('posts').insert([post]);
     await badges.checkAndAwardBadges(req.userId);
 
     res.status(201).json({ post: await decoratePost(post, req.userId) });
@@ -99,86 +106,89 @@ router.get ("/posts", requireAuth, async (req, res) => {
   const userId = req.query.userId === "me" ? req.userId : req.query.userId;
   const { page, pageSize } = clampPagination(req.query.page, req.query.pageSize);
 
-  let posts = await readCollection("posts");
-  if (userId) posts = posts.filter((p) => p.userId === userId);
+  let query = supabase.from('posts').select('*', { count: 'exact' }).order('createdAt', { ascending: false });
+  if (userId) query = query.eq('userId', userId);
+  
+  const { data: postsData, count: total } = await query;
+  let posts = postsData || [];
+
   if (isNonEmptyString(search)) {
     const needle = search.trim().toLowerCase();
-    const users = await readCollection("users");
+    const { data: users } = await supabase.from('users').select('id, name');
+    const userMap = new Map((users || []).map(u => [u.id, u.name]));
     posts = posts.filter((p) => {
-      const author = users.find((u) => u.id === p.userId);
-      return p.description.toLowerCase().includes(needle) || author?.name.toLowerCase().includes(needle);
+      const authorName = userMap.get(p.userId) || "";
+      return p.description.toLowerCase().includes(needle) || authorName.toLowerCase().includes(needle);
     });
   }
-  posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const total = posts.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
   const pageItems = posts.slice((page - 1) * pageSize, page * pageSize);
 
-  const collections = { likes: await readCollection("likes"), comments: await readCollection("comments"), users: await readCollection("users") };
+  const { data: likes } = await supabase.from('likes').select('*').in('postId', pageItems.map(p => p.id));
+  const { data: comments } = await supabase.from('comments').select('*').in('postId', pageItems.map(p => p.id));
+  const { data: users } = await supabase.from('users').select('*').in('id', pageItems.map(p => p.userId));
+  
+  const collections = { likes: likes || [], comments: comments || [], users: users || [] };
   const decorated = await Promise.all(pageItems.map((p) => decoratePost(p, req.userId, collections)));
-  res.json({ posts: decorated, page, pageSize, total, totalPages });
+  res.json({ posts: decorated, page, pageSize, total: posts.length, totalPages });
 });
 
 router.get ("/posts/:id", requireAuth, async (req, res) => {
-  const post = (await readCollection("posts")).find((p) => p.id === req.params.id);
+  const { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
 
-  const allUsers = await readCollection("users");
-  const allComments = await readCollection("comments");
-  const comments = allComments
-    .filter((c) => c.postId === post.id)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    .map((c) => ({ ...c, author: publicProfile(allUsers.find((u) => u.id === c.userId)) }));
+  const { data: allComments } = await supabase.from('comments').select('*').eq('postId', post.id).order('createdAt', { ascending: true });
+  const { data: allUsers } = await supabase.from('users').select('*').in('id', (allComments || []).map(c => c.userId));
+  
+  const comments = (allComments || []).map((c) => ({ ...c, author: publicProfile((allUsers || []).find((u) => u.id === c.userId)) }));
 
   res.json({ post: await decoratePost(post, req.userId), comments });
 });
 
 router.patch ("/posts/:id", requireAuth, async (req, res) => {
-  const postsCol = await getCollection("posts");
-  const post = await postsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  let { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
   if (post.userId !== req.userId) return sendError(res, 403, "NOT_YOUR_POST", "You can only edit your own posts.");
 
   if (isNonEmptyString(req.body?.description)) {
     const description = req.body.description.trim().slice(0, 2000);
     const updatedAt = new Date().toISOString();
-    await postsCol.updateOne({ id: req.params.id }, { $set: { description, updatedAt } });
+    await supabase.from('posts').update({ description, updatedAt }).eq('id', req.params.id);
+    post.description = description;
   }
   res.json({ post: await decoratePost(post, req.userId) });
 });
 
 router.delete ("/posts/:id", requireAuth, async (req, res) => {
-  const postsCol = await getCollection("posts");
-  const post = await postsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
 
-  const requester = await (await getCollection("users")).findOne({ id: req.userId }, { projection: { _id: 0 } });
+  const { data: requester } = await supabase.from('users').select('isAdmin').eq('id', req.userId).single();
   if (post.userId !== req.userId && !requester?.isAdmin) {
     return sendError(res, 403, "NOT_YOUR_POST", "You can only delete your own posts.");
   }
 
-  deleteUploadedFile(post.beforeImageUrl);
-  deleteUploadedFile(post.afterImageUrl);
-  await postsCol.deleteOne({ id: req.params.id });
-  await (await getCollection("comments")).deleteMany({ postId: req.params.id });
-  await (await getCollection("likes")).deleteMany({ postId: req.params.id });
+  // Delete uploaded files if any
+  for (const img of (post.images || [])) {
+    deleteUploadedFile(img.url);
+  }
+  await supabase.from('posts').delete().eq('id', req.params.id);
+  // Comments and likes will cascade due to ON DELETE CASCADE on the tables
 
   res.json({ success: true });
 });
 
 router.post ("/posts/:id/like", requireAuth, async (req, res) => {
-  const postsCol = await getCollection("posts");
-  const post = await postsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
 
-  const likesCol = await getCollection("likes");
-  const existingLike = await likesCol.findOne({ postId: req.params.id, userId: req.userId });
+  const { data: existingLike } = await supabase.from('likes').select('id').eq('postId', req.params.id).eq('userId', req.userId).maybeSingle();
   if (!existingLike) {
-    await likesCol.insertOne({ id: uuidv4(), postId: req.params.id, userId: req.userId, createdAt: new Date().toISOString() });
+    await supabase.from('likes').insert([{ id: uuidv4(), postId: req.params.id, userId: req.userId, createdAt: new Date().toISOString() }]);
 
     if (post.userId !== req.userId) {
-      const liker = await (await getCollection("users")).findOne({ id: req.userId }, { projection: { _id: 0 } });
+      const { data: liker } = await supabase.from('users').select('name').eq('id', req.userId).single();
       await createNotification(post.userId, "like", "New like", `${liker?.name || "Someone"} liked your post.`, `community.html?post=${post.id}`);
     }
   }
@@ -186,20 +196,17 @@ router.post ("/posts/:id/like", requireAuth, async (req, res) => {
 });
 
 router.delete ("/posts/:id/like", requireAuth, async (req, res) => {
-  const postsCol = await getCollection("posts");
-  const post = await postsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
 
-  const likesCol = await getCollection("likes");
-  await likesCol.deleteOne({ postId: req.params.id, userId: req.userId });
+  await supabase.from('likes').delete().eq('postId', req.params.id).eq('userId', req.userId);
   res.json({ post: await decoratePost(post, req.userId) });
 });
 
 // ---- Comments ---------------------------------------------------------
 
 router.post ("/posts/:id/comments", requireAuth, async (req, res) => {
-  const postsCol = await getCollection("posts");
-  const post = await postsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: post } = await supabase.from('posts').select('*').eq('id', req.params.id).single();
   if (!post) return sendError(res, 404, "POST_NOT_FOUND", "That post couldn't be found.");
   if (!isNonEmptyString(req.body?.text)) return sendError(res, 400, "EMPTY_COMMENT", "Comment can't be empty.");
 
@@ -210,10 +217,10 @@ router.post ("/posts/:id/comments", requireAuth, async (req, res) => {
     text: req.body.text.trim().slice(0, 1000),
     createdAt: new Date().toISOString(),
   };
-  await (await getCollection("comments")).insertOne(comment);
+  await supabase.from('comments').insert([comment]);
 
   if (post.userId !== req.userId) {
-    const commenter = await (await getCollection("users")).findOne({ id: req.userId }, { projection: { _id: 0 } });
+    const { data: commenter } = await supabase.from('users').select('name').eq('id', req.userId).single();
     await createNotification(
       post.userId,
       "comment",
@@ -223,21 +230,20 @@ router.post ("/posts/:id/comments", requireAuth, async (req, res) => {
     );
   }
 
-  const commenterUser = await (await getCollection("users")).findOne({ id: req.userId }, { projection: { _id: 0 } });
+  const { data: commenterUser } = await supabase.from('users').select('*').eq('id', req.userId).single();
   res.status(201).json({ comment: { ...comment, author: publicProfile(commenterUser) } });
 });
 
 router.delete ("/comments/:id", requireAuth, async (req, res) => {
-  const commentsCol = await getCollection("comments");
-  const comment = await commentsCol.findOne({ id: req.params.id }, { projection: { _id: 0 } });
+  const { data: comment } = await supabase.from('comments').select('*').eq('id', req.params.id).single();
   if (!comment) return sendError(res, 404, "COMMENT_NOT_FOUND", "That comment couldn't be found.");
 
-  const requester = await (await getCollection("users")).findOne({ id: req.userId }, { projection: { _id: 0 } });
+  const { data: requester } = await supabase.from('users').select('isAdmin').eq('id', req.userId).single();
   if (comment.userId !== req.userId && !requester?.isAdmin) {
     return sendError(res, 403, "NOT_YOUR_COMMENT", "You can only delete your own comments.");
   }
 
-  await commentsCol.deleteOne({ id: req.params.id });
+  await supabase.from('comments').delete().eq('id', req.params.id);
   res.json({ success: true });
 });
 
@@ -245,46 +251,49 @@ router.delete ("/comments/:id", requireAuth, async (req, res) => {
 
 router.post ("/users/:id/follow", requireAuth, async (req, res) => {
   if (req.params.id === req.userId) return sendError(res, 400, "CANNOT_FOLLOW_SELF", "You can't follow yourself.");
-  const usersCol = await getCollection("users");
-  const targetExists = await usersCol.findOne({ id: req.params.id });
+  const { data: targetExists } = await supabase.from('users').select('id').eq('id', req.params.id).maybeSingle();
   if (!targetExists) return sendError(res, 404, "USER_NOT_FOUND", "That user couldn't be found.");
 
-  const followsCol = await getCollection("follows");
-  const existingFollow = await followsCol.findOne({ followerId: req.userId, followingId: req.params.id });
+  const { data: existingFollow } = await supabase.from('follows').select('id').eq('followerId', req.userId).eq('followingId', req.params.id).maybeSingle();
   if (!existingFollow) {
-    await followsCol.insertOne({ id: uuidv4(), followerId: req.userId, followingId: req.params.id, createdAt: new Date().toISOString() });
+    await supabase.from('follows').insert([{ id: uuidv4(), followerId: req.userId, followingId: req.params.id, createdAt: new Date().toISOString() }]);
 
-    const follower = await usersCol.findOne({ id: req.userId }, { projection: { _id: 0 } });
+    const { data: follower } = await supabase.from('users').select('name').eq('id', req.userId).single();
     await createNotification(req.params.id, "follow", "New follower", `${follower?.name || "Someone"} started following you.`, `profile.html?id=${req.userId}`);
   }
   res.json({ success: true });
 });
 
 router.delete ("/users/:id/follow", requireAuth, async (req, res) => {
-  const followsCol = await getCollection("follows");
-  await followsCol.deleteOne({ followerId: req.userId, followingId: req.params.id });
+  await supabase.from('follows').delete().eq('followerId', req.userId).eq('followingId', req.params.id);
   res.json({ success: true });
 });
 
 router.get ("/users/:id", requireAuth, async (req, res) => {
   const targetId = req.params.id === "me" ? req.userId : req.params.id;
-  const user = (await readCollection("users")).find((u) => u.id === targetId);
+  const { data: user } = await supabase.from('users').select('*').eq('id', targetId).maybeSingle();
   if (!user) return sendError(res, 404, "USER_NOT_FOUND", "That user couldn't be found.");
 
-  const items = (await readCollection("items")).filter((i) => i.userId === targetId);
-  const posts = (await readCollection("posts")).filter((p) => p.userId === targetId);
-  const follows = await readCollection("follows");
+  const { count: itemsCount } = await supabase.from('items').select('*', { count: 'exact', head: true }).eq('userId', targetId);
+  const { count: completedCount } = await supabase.from('items').select('*', { count: 'exact', head: true }).eq('userId', targetId).not('userAction', 'is', null);
+  const { count: postsCount } = await supabase.from('posts').select('*', { count: 'exact', head: true }).eq('userId', targetId);
+  
+  const { count: followerCount } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('followingId', targetId);
+  const { count: followingCount } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('followerId', targetId);
+  
+  const { data: isFollowedByMe } = await supabase.from('follows').select('id').eq('followerId', req.userId).eq('followingId', targetId).maybeSingle();
+  
   const unlockedBadges = await badges.getUserBadges(targetId);
 
   res.json({
     profile: {
       ...publicProfile(user),
-      totalScans: items.length,
-      itemsCompleted: items.filter((i) => i.userAction).length,
-      postCount: posts.length,
-      followerCount: follows.filter((f) => f.followingId === targetId).length,
-      followingCount: follows.filter((f) => f.followerId === targetId).length,
-      isFollowedByMe: follows.some((f) => f.followerId === req.userId && f.followingId === targetId),
+      totalScans: itemsCount || 0,
+      itemsCompleted: completedCount || 0,
+      postCount: postsCount || 0,
+      followerCount: followerCount || 0,
+      followingCount: followingCount || 0,
+      isFollowedByMe: !!isFollowedByMe,
       isOwnProfile: targetId === req.userId,
       badges: unlockedBadges.map((b) => ({ badgeId: b.badgeId, unlockedAt: b.unlockedAt })),
     },
@@ -292,10 +301,11 @@ router.get ("/users/:id", requireAuth, async (req, res) => {
 });
 
 router.patch ("/profile", requireAuth, async (req, res) => {
-  const users = await readCollection("users");
-  const user = users.find((u) => u.id === req.userId);
-  if (typeof req.body?.bio === "string") user.bio = req.body.bio.slice(0, 500);
-  await writeCollection("users", users);
+  const { data: user } = await supabase.from('users').select('*').eq('id', req.userId).single();
+  if (typeof req.body?.bio === "string") {
+    user.bio = req.body.bio.slice(0, 500);
+    await supabase.from('users').update({ bio: user.bio }).eq('id', req.userId);
+  }
   res.json({ profile: publicProfile(user) });
 });
 

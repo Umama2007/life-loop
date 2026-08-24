@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
-const { readCollection, writeCollection, getCollection } = require("../db");
+const { supabase } = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 const { sendError } = require("../utils/errors");
@@ -121,7 +121,7 @@ router.post(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await (await getCollection("items")).insertOne(item);
+    await supabase.from('items').insert([item]);
     await badges.checkAndAwardBadges(req.userId);
 
     res.status(201).json({ item: decorateItem(item) });
@@ -156,7 +156,8 @@ router.get ("/", requireAuth, async (req, res) => {
   const { search, category, condition, action, saved, completed, dateFrom, dateTo, sort } = req.query;
   const { page, pageSize } = clampPagination(req.query.page, req.query.pageSize);
 
-  let items = (await readCollection("items")).filter((i) => i.userId === req.userId);
+  const { data } = await supabase.from('items').select('*').eq('userId', req.userId);
+  let items = data || [];
 
   if (isNonEmptyString(search)) {
     const needle = search.trim().toLowerCase();
@@ -188,7 +189,8 @@ router.get ("/", requireAuth, async (req, res) => {
 });
 
 router.get ("/stats", requireAuth, async (req, res) => {
-  const items = (await readCollection("items")).filter((i) => i.userId === req.userId);
+  const { data } = await supabase.from('items').select('*').eq('userId', req.userId);
+  const items = data || [];
   const actioned = items.filter((i) => i.userAction);
 
   const countsByAction = Object.fromEntries(VALID_ACTIONS.map((a) => [a, 0]));
@@ -223,7 +225,7 @@ router.get ("/stats", requireAuth, async (req, res) => {
 });
 
 router.get ("/:id", requireAuth, async (req, res) => {
-  const item = (await readCollection("items")).find((i) => i.id === req.params.id && i.userId === req.userId);
+  const { data: item } = await supabase.from('items').select('*').eq('id', req.params.id).eq('userId', req.userId).single();
   if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
   res.json({ item: decorateItem(item) });
 });
@@ -231,8 +233,7 @@ router.get ("/:id", requireAuth, async (req, res) => {
 // ---- Update (corrections, actual action taken, notes, saved) -------------
 
 router.patch("/:id", requireAuth, async (req, res) => {
-  const itemsCol = await getCollection("items");
-  const item = await itemsCol.findOne({ id: req.params.id, userId: req.userId }, { projection: { _id: 0 } });
+  const { data: item } = await supabase.from('items').select('*').eq('id', req.params.id).eq('userId', req.userId).single();
   if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
   const { name, category, condition, ageYears, brand, model, material, userAction, notes, saved, recompute } = req.body || {};
@@ -299,15 +300,14 @@ router.patch("/:id", requireAuth, async (req, res) => {
   item.updatedAt = new Date().toISOString();
   updateFields.updatedAt = item.updatedAt;
 
-  await itemsCol.updateOne({ id: req.params.id, userId: req.userId }, { $set: updateFields });
+  await supabase.from('items').update(updateFields).eq('id', req.params.id).eq('userId', req.userId);
   if (userAction) await badges.checkAndAwardBadges(req.userId);
   res.json({ item: decorateItem(item) });
 });
 
 router.delete ("/:id", requireAuth, async (req, res) => {
-  const itemsCol = await getCollection("items");
-  const result = await itemsCol.deleteOne({ id: req.params.id, userId: req.userId });
-  if (result.deletedCount === 0) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
+  const { count } = await supabase.from('items').delete({ count: 'exact' }).eq('id', req.params.id).eq('userId', req.userId);
+  if (count === 0) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
   res.json({ success: true });
 });
@@ -318,8 +318,7 @@ router.get("/:id/assistant/:type", requireAuth, async (req, res) => {
   const { type } = req.params;
   if (!isOneOf(type, ASSISTANT_TYPES)) return sendError(res, 400, "INVALID_ASSISTANT_TYPE", "Unrecognized guide type.");
 
-  const items = await readCollection("items");
-  const item = items.find((i) => i.id === req.params.id && i.userId === req.userId);
+  const { data: item } = await supabase.from('items').select('*').eq('id', req.params.id).eq('userId', req.userId).single();
   if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
   const forceRegenerate = req.query.regenerate === "true";
@@ -359,13 +358,11 @@ router.get("/:id/assistant/:type", requireAuth, async (req, res) => {
   try {
     const guide = await generators[type]();
 
-    const freshItems = await readCollection("items");
-    const freshItem = freshItems.find((i) => i.id === item.id);
+    const { data: freshItem } = await supabase.from('items').select('*').eq('id', item.id).single();
     if (freshItem) {
-      freshItem.assistantCache = freshItem.assistantCache || {};
-      freshItem.assistantCache[type] = guide;
-      freshItem.updatedAt = new Date().toISOString();
-      await writeCollection("items", freshItems);
+      const newCache = freshItem.assistantCache || {};
+      newCache[type] = guide;
+      await supabase.from('items').update({ assistantCache: newCache, updatedAt: new Date().toISOString() }).eq('id', item.id);
     }
     res.json({ guide });
   } catch (err) {
@@ -390,7 +387,7 @@ router.get(
       return sendError(res, 400, "INVALID_QUESTION", "Unrecognized question.");
     }
 
-    const item = (await readCollection("items")).find((i) => i.id === req.params.id && i.userId === req.userId);
+    const { data: item } = await supabase.from('items').select('*').eq('id', req.params.id).eq('userId', req.userId).single();
     if (!item) return sendError(res, 404, "ITEM_NOT_FOUND", "That item couldn't be found.");
 
     try {

@@ -24,7 +24,7 @@ function rateLimit({ windowMs, max, message }) {
     if (redis) {
       try {
         console.log("[RATE-LIMIT] Calling Upstash Redis...");
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("UPSTASH_TIMEOUT")), 5000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("UPSTASH_TIMEOUT")), 1000));
         
         const count = await Promise.race([redis.incr(key), timeoutPromise]);
         console.log("[RATE-LIMIT] Upstash Redis call completed successfully.");

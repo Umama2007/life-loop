@@ -3,7 +3,8 @@
 // counter that could drift out of sync), counting only activity that
 // happened after the user joined the challenge.
 
-const { readCollection, writeCollection } = require("../db");
+const { v4: uuidv4 } = require("uuid");
+const { supabase } = require("../db");
 const { createNotification } = require("./notifications");
 
 const CHALLENGES = [
@@ -38,8 +39,10 @@ function countForMetric(metric, items) {
 // Returns every challenge with the current user's join/progress/completion
 // status layered on top.
 async function getChallengesForUser(userId) {
-  const items = (await readCollection("items")).filter((i) => i.userId === userId);
-  const userChallenges = (await readCollection("userChallenges")).filter((c) => c.userId === userId);
+  const { data: itemsData } = await supabase.from('items').select('*').eq('userId', userId);
+  const items = itemsData || [];
+  const { data: challengesData } = await supabase.from('userChallenges').select('*').eq('userId', userId);
+  const userChallenges = challengesData || [];
   let changed = false;
 
   const result = [];
@@ -65,8 +68,10 @@ async function getChallengesForUser(userId) {
   }
 
   if (changed) {
-    const all = await readCollection("userChallenges");
-    await writeCollection("userChallenges", all.map((c) => userChallenges.find((u) => u.id === c.id) || c));
+    const updates = userChallenges.filter(u => u.id === joined.id).map(u => ({ id: u.id, completedAt: u.completedAt, progress: u.progress || joined.progress }));
+    for (const u of updates) {
+      await supabase.from('userChallenges').update({ completedAt: u.completedAt, progress: u.progress }).eq('id', u.id);
+    }
   }
 
   return result;
@@ -74,12 +79,12 @@ async function getChallengesForUser(userId) {
 
 async function joinChallenge(userId, challengeId) {
   if (!CHALLENGES.some((c) => c.id === challengeId)) return null;
-  const userChallenges = await readCollection("userChallenges");
+  const { data: userChallenges } = await supabase.from('userChallenges').select('*');
   if (userChallenges.some((c) => c.userId === userId && c.challengeId === challengeId)) {
     return (await getChallengesForUser(userId)).find((c) => c.id === challengeId);
   }
-  userChallenges.push({ id: `${userId}:${challengeId}`, userId, challengeId, joinedAt: new Date().toISOString(), completedAt: null });
-  await writeCollection("userChallenges", userChallenges);
+  const newChallenge = { id: uuidv4(), userId, challengeId, joinedAt: new Date().toISOString(), completedAt: null, progress: 0 };
+  await supabase.from('userChallenges').insert([newChallenge]);
   return (await getChallengesForUser(userId)).find((c) => c.id === challengeId);
 }
 

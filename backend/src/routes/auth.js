@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { readCollection, writeCollection } = require("../db");
+const { supabase } = require("../db");
 const { requireAuth, COOKIE_NAME } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 const { sendError } = require("../utils/errors");
@@ -28,7 +28,7 @@ function setSessionCookie(res, userId, rememberMe) {
   const cookieOptions = {
     httpOnly: true,
     sameSite: "none",
-    secure: true, // Required by browsers for SameSite=None
+    secure: true,
   };
   if (rememberMe) cookieOptions.maxAge = SEVEN_DAYS_MS * (30 / 7);
   res.cookie(COOKIE_NAME, token, cookieOptions);
@@ -50,23 +50,29 @@ router.post("/register", authRateLimit, async (req, res) => {
     return sendError(res, 400, "WEAK_PASSWORD", "Password must be at least 6 characters.");
   }
 
-  console.log("[AUTH-REGISTER] About to read users from MongoDB...");
-  const users = await readCollection("users");
-  if (users.some((u) => u.email === cleanEmail)) {
+  console.log("[AUTH-REGISTER] Checking for existing user...");
+  const { data: existingUser } = await supabase.from('users').select('id').eq('email', cleanEmail).single();
+  if (existingUser) {
     return sendError(res, 409, "EMAIL_TAKEN", "An account with that email already exists. Try signing in instead.");
   }
+
+  const { count } = await supabase.from('users').select('id', { count: 'exact', head: true });
 
   const user = {
     id: uuidv4(),
     name: cleanName,
     email: cleanEmail,
     passwordHash: bcrypt.hashSync(password, 10),
-    isAdmin: users.length === 0, // first registered account on a fresh install becomes admin
+    isAdmin: count === 0,
     createdAt: new Date().toISOString(),
   };
-  users.push(user);
-  console.log("[AUTH-REGISTER] MongoDB read complete. Writing new user...");
-  await writeCollection("users", users);
+
+  console.log("[AUTH-REGISTER] Writing new user to Postgres...");
+  const { error } = await supabase.from('users').insert([user]);
+  if (error) {
+    console.error("Supabase insert error:", error);
+    return sendError(res, 500, "DB_ERROR", "Could not create user account.");
+  }
   console.log("[AUTH-REGISTER] User written successfully.");
 
   setSessionCookie(res, user.id, Boolean(req.body.rememberMe));
@@ -77,8 +83,7 @@ router.post("/login", authRateLimit, async (req, res) => {
   const { email, password, rememberMe } = req.body || {};
   const cleanEmail = String(email || "").trim().toLowerCase();
 
-  const users = await readCollection("users");
-  const user = users.find((u) => u.email === cleanEmail);
+  const { data: user } = await supabase.from('users').select('*').eq('email', cleanEmail).single();
 
   if (!user || !bcrypt.compareSync(String(password || ""), user.passwordHash)) {
     return sendError(res, 401, "INVALID_CREDENTIALS", "Incorrect email or password.");
@@ -94,8 +99,7 @@ router.post ("/logout", async (req, res) => {
 });
 
 router.get("/me", requireAuth, async (req, res) => {
-  const users = await readCollection("users");
-  const user = users.find((u) => u.id === req.userId);
+  const { data: user } = await supabase.from('users').select('*').eq('id', req.userId).single();
   if (!user) return sendError(res, 401, "NOT_SIGNED_IN", "Not signed in.");
   res.json({ user: publicUser(user) });
 });

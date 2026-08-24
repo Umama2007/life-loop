@@ -4,7 +4,8 @@
 // "game" in a way that encourages environmentally harmful choices (e.g.
 // there's no badge for recycling more than repairing/reusing).
 
-const { readCollection, writeCollection } = require("../db");
+const { v4: uuidv4 } = require("uuid");
+const { supabase } = require("../db");
 const { createNotification } = require("./notifications");
 
 const BADGES = [
@@ -61,27 +62,33 @@ function getBadgeDefinitions() {
 // newly-earned badges (idempotent — never re-awards one already held), and
 // returns the user's full unlocked-badge list afterward.
 async function checkAndAwardBadges(userId) {
-  const items = (await readCollection("items")).filter((i) => i.userId === userId);
-  const posts = (await readCollection("posts")).filter((p) => p.userId === userId);
-  const userBadges = await readCollection("userBadges");
+  const { data: itemsData } = await supabase.from('items').select('*').eq('userId', userId);
+  const items = itemsData || [];
+  const { data: postsData } = await supabase.from('posts').select('*').eq('userId', userId);
+  const posts = postsData || [];
+  const { data: badgesData } = await supabase.from('userBadges').select('*').eq('userId', userId);
+  const userBadges = badgesData || [];
   const alreadyUnlocked = new Set(userBadges.filter((b) => b.userId === userId).map((b) => b.badgeId));
 
   let changed = false;
   for (const badge of BADGES) {
     if (alreadyUnlocked.has(badge.id)) continue;
     if (badge.check({ items, posts })) {
-      userBadges.push({ id: `${userId}:${badge.id}`, userId, badgeId: badge.id, unlockedAt: new Date().toISOString() });
+      const newBadge = { id: uuidv4(), userId, badgeId: badge.id, earnedAt: new Date().toISOString() };
+      userBadges.push(newBadge);
+      await supabase.from('userBadges').insert([newBadge]);
       await createNotification(userId, "badge", `Badge unlocked: ${badge.title}`, badge.description, "profile.html");
       changed = true;
     }
   }
-  if (changed) await writeCollection("userBadges", userBadges);
 
-  return (await readCollection("userBadges")).filter((b) => b.userId === userId);
+  const { data: finalBadges } = await supabase.from('userBadges').select('*').eq('userId', userId);
+  return finalBadges || [];
 }
 
 async function getUserBadges(userId) {
-  return (await readCollection("userBadges")).filter((b) => b.userId === userId);
+  const { data } = await supabase.from('userBadges').select('*').eq('userId', userId);
+  return data || [];
 }
 
 module.exports = { getBadgeDefinitions, checkAndAwardBadges, getUserBadges, BADGE_POINTS: 50 };
