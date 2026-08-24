@@ -50,6 +50,7 @@ function renderPhotoPreviews() {
 
 function setupPhotoInput() {
   const input = document.getElementById("itemPhotos");
+  if (!input) return;
   input.addEventListener("change", () => {
     const incoming = Array.from(input.files || []);
     selectedFiles = [...selectedFiles, ...incoming].slice(0, 6);
@@ -97,7 +98,10 @@ async function showGuide(itemId, type) {
 }
 
 function setupIdentificationCorrection() {
-  document.getElementById("correctIdentificationButton").addEventListener("click", () => {
+  const correctBtn = document.getElementById("correctIdentificationButton");
+  if (!correctBtn) return;
+  
+  correctBtn.addEventListener("click", () => {
     if (!currentItem) return;
     document.getElementById("correctName").value = currentItem.name;
     document.getElementById("correctCategory").value = currentItem.category;
@@ -129,7 +133,10 @@ function setupIdentificationCorrection() {
 }
 
 function setupResultActions() {
-  document.getElementById("saveItemButton").addEventListener("click", async () => {
+  const saveBtn = document.getElementById("saveItemButton");
+  if (!saveBtn) return;
+
+  saveBtn.addEventListener("click", async () => {
     if (!currentItem) return;
     const nextSaved = !currentItem.saved;
     const response = await fetch(`${API_BASE_URL}/items/${currentItem.id}`, {
@@ -267,6 +274,8 @@ async function deleteItem(id) {
 
 function setupQrScan() {
   const button = document.getElementById("decodeQrButton");
+  if (!button) return;
+  
   const fileInput = document.getElementById("qrCodeImage");
   const message = document.getElementById("qrScanMessage");
 
@@ -308,6 +317,8 @@ function setupQrScan() {
 
 function setupScanForm() {
   const form = document.getElementById("scanForm");
+  if (!form) return;
+  
   const submitButton = document.getElementById("scanSubmitButton");
   const message = document.getElementById("scanFormMessage");
 
@@ -370,4 +381,11 @@ function setupScannerModalChrome() {
   setupIdentificationCorrection();
   setupResultActions();
   loadDashboard();
+
+  if (new URLSearchParams(window.location.search).get("scan") === "true") {
+    if (document.getElementById("scanner")) {
+      openScanner();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
 })();
