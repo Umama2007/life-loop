@@ -261,18 +261,3 @@ leaves your machine.
 
 Interactive API docs (Swagger UI) are available at **http://localhost:3000/api-docs** once the server is running. The raw OpenAPI spec is at `/api/openapi.json`.
 
-## What's not built yet
-
-All items originally scoped for this project are now built: real backend,
-scanning with ranked AI recommendations, repair/reuse/resell/donate/recycle
-guides, scan history, saved items, community (posts/likes/comments/follows),
-gamification (badges/challenges/leaderboard), moderation, notifications,
-OCR, QR code scanning, background job processing, and API documentation.
-
-Intentionally not built: a dedicated admin dashboard UI. Basic moderation
-(viewing and resolving reports) is available to admin accounts directly on
-the Community page — a full separate admin panel was judged unnecessary for
-an app designed to run as a single local instance for one person.
-
-1D barcode formats (UPC/EAN) are not supported, only QR codes — see the OCR
-section above for why.
